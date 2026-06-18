@@ -273,7 +273,7 @@ textarea::placeholder{color:var(--text-dim)}
   </div>
   <select class="model-select" id="model-select" onchange="onModelChange(this.value)">
     <option value="gemini-2.0-flash-lite">⚡ Rápido</option>
-    <option value="gemini-2.0-flash" selected>◆ Estándar</option>
+    <option value="gemini-2.5-flash" selected>◆ Estándar</option>
     <option value="gemini-1.5-pro">🔷 Profundo</option>
     <option value="gemini-2.5-pro-preview-06-05">💎 Máximo</option>
   </select>
@@ -395,13 +395,13 @@ textarea::placeholder{color:var(--text-dim)}
 // ═══════════════════════════════════════════════════
 const MODELS = {
   'gemini-2.0-flash-lite':        { label:'Rápido',   icon:'⚡', depthClass:'depth-1', papers:'4-5',  summaryLen:'breve (1-2 frases)',     note:'Rápido y económico' },
-  'gemini-2.0-flash':             { label:'Estándar', icon:'◆',  depthClass:'depth-2', papers:'6-8',  summaryLen:'estándar (2-3 frases)',  note:'Balance calidad/velocidad' },
+  'gemini-2.5-flash':             { label:'Estándar', icon:'◆',  depthClass:'depth-2', papers:'6-8',  summaryLen:'estándar (2-3 frases)',  note:'Balance calidad/velocidad' },
   'gemini-1.5-pro':               { label:'Profundo', icon:'🔷', depthClass:'depth-3', papers:'8-10', summaryLen:'detallada (3-4 frases)',  note:'Mayor contexto y detalle' },
   'gemini-2.5-pro-preview-06-05': { label:'Máximo',   icon:'💎', depthClass:'depth-4', papers:'10-12',summaryLen:'exhaustiva (4-5 frases)',note:'Análisis exhaustivo' },
 };
-const getModel  = ()  => localStorage.getItem('medlit_model') || 'gemini-2.0-flash';
+const getModel  = ()  => localStorage.getItem('medlit_model') || 'gemini-2.5-flash';
 const saveModel = m   => localStorage.setItem('medlit_model', m);
-const modelMeta = ()  => MODELS[getModel()] || MODELS['gemini-2.0-flash'];
+const modelMeta = ()  => MODELS[getModel()] || MODELS['gemini-2.5-flash'];
 function onModelChange(v){ saveModel(v); updateUI(); }
 
 // ═══════════════════════════════════════════════════
@@ -499,7 +499,7 @@ async function testKey(id){
       var res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method:'POST',
         headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+k.key, 'HTTP-Referer':'https://medlit.app', 'X-Title':'MedLit' },
-        body: JSON.stringify({ model:'meta-llama/llama-3.3-70b-instruct:free', messages:[{role:'user',content:'Say OK'}], max_tokens:5 })
+        body: JSON.stringify({ model:'moonshotai/kimi-k2:free', messages:[{role:'user',content:'Say OK'}], max_tokens:5 })
       });
       var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
       if (res.ok) {
@@ -511,7 +511,7 @@ async function testKey(id){
     } else {
       // Gemini test — try ?key= then Bearer
       var body = JSON.stringify({ contents:[{ parts:[{ text:'Say OK' }] }] });
-      var BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+      var BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
       var res = await fetch(BASE + '?key=' + encodeURIComponent(k.key), {
         method:'POST', headers:{'Content-Type':'application/json'}, body:body
       });
@@ -654,9 +654,9 @@ function setCriticMode(m){
 //  OPENROUTER
 // ═══════════════════════════════════════════════════
 var OR_MODELS = {
-  'gemini-2.0-flash-lite':        'google/gemma-3-27b-it:free',
-  'gemini-2.0-flash':             'meta-llama/llama-3.3-70b-instruct:free',
-  'gemini-1.5-pro':               'qwen/qwen2.5-72b-instruct:free',
+  'gemini-2.0-flash-lite':        'meta-llama/llama-3.1-8b-instruct:free',
+  'gemini-2.5-flash':             'moonshotai/kimi-k2:free',
+  'gemini-1.5-pro':               'moonshotai/kimi-k2:free',
   'gemini-2.5-pro-preview-06-05': 'deepseek/deepseek-r1:free',
 };
 
