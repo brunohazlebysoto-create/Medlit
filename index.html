@@ -499,7 +499,7 @@ async function testKey(id){
       var res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method:'POST',
         headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+k.key, 'HTTP-Referer':'https://medlit.app', 'X-Title':'MedLit' },
-        body: JSON.stringify({ model:'google/gemini-2.0-flash-exp:free', messages:[{role:'user',content:'Say OK'}], max_tokens:5 })
+        body: JSON.stringify({ model:'meta-llama/llama-3.3-70b-instruct:free', messages:[{role:'user',content:'Say OK'}], max_tokens:5 })
       });
       var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
       if (res.ok) {
@@ -654,9 +654,9 @@ function setCriticMode(m){
 //  OPENROUTER
 // ═══════════════════════════════════════════════════
 var OR_MODELS = {
-  'gemini-2.0-flash-lite':        'google/gemini-2.0-flash-exp:free',
-  'gemini-2.0-flash':             'google/gemini-2.0-flash-exp:free',
-  'gemini-1.5-pro':               'meta-llama/llama-3.3-70b-instruct:free',
+  'gemini-2.0-flash-lite':        'google/gemma-3-27b-it:free',
+  'gemini-2.0-flash':             'meta-llama/llama-3.3-70b-instruct:free',
+  'gemini-1.5-pro':               'qwen/qwen2.5-72b-instruct:free',
   'gemini-2.5-pro-preview-06-05': 'deepseek/deepseek-r1:free',
 };
 
