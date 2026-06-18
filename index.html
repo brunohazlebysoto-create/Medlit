@@ -36,20 +36,23 @@ header{position:sticky;top:0;z-index:100;background:rgba(8,12,20,.95);border-bot
 @keyframes pulse-btn{0%,100%{opacity:1}50%{opacity:.7}}
 
 /* ── MODAL OVERLAY ── */
-.modal-overlay{
+#modal{
   display:none;
   position:fixed;
   top:0;left:0;right:0;bottom:0;
   width:100%;height:100%;
-  background:rgba(0,0,0,.75);
-  z-index:999;
+  background:rgba(0,0,0,.8);
+  z-index:9999;
+  -webkit-box-align:center;
+  -webkit-align-items:center;
   align-items:center;
+  -webkit-justify-content:center;
   justify-content:center;
   padding:20px;
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
+  box-sizing:border-box;
 }
-.modal-overlay.open{display:flex}
 
 /* ── MODAL BOX ── */
 .modal{
@@ -274,7 +277,7 @@ textarea::placeholder{color:var(--text-dim)}
     <option value="gemini-1.5-pro">🔷 Profundo</option>
     <option value="gemini-2.5-pro-preview-06-05">💎 Máximo</option>
   </select>
-  <button class="key-btn no-key" id="key-btn" onclick="openModal()">✦ Keys</button>
+  <button class="key-btn no-key" id="key-btn" onclick="openModal()" ontouchend="openModal();event.preventDefault()">✦ Keys</button>
 </header>
 
 <!-- ═══ MODAL ═══ -->
@@ -282,7 +285,7 @@ textarea::placeholder{color:var(--text-dim)}
   <div class="modal">
     <div class="modal-head">
       <h3>🔑 API Keys Gemini</h3>
-      <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕ Cerrar</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()" ontouchend="closeModal();event.preventDefault()">✕ Cerrar</button>
     </div>
     <p class="modal-sub">
       Se guardan <strong>solo en este navegador</strong>. Con varias keys se rota automáticamente si una llega al límite.
@@ -544,12 +547,12 @@ function renderKeyList(){
 // ═══════════════════════════════════════════════════
 function openModal(){
   renderKeyList();
-  document.getElementById('modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  var m = document.getElementById('modal');
+  m.style.display = '-webkit-flex';
+  m.style.display = 'flex';
 }
 function closeModal(){
-  document.getElementById('modal').classList.remove('open');
-  document.body.style.overflow = '';
+  document.getElementById('modal').style.display = 'none';
 }
 function handleOverlayClick(e){
   if (e.target === document.getElementById('modal')) closeModal();
@@ -1027,9 +1030,7 @@ function skelCritic(){ return '<div class="analysis-result"><div class="sk-card"
 // ═══════════════════════════════════════════════════
 migrateOldKey();
 updateUI();
-if (!getKeys().length) {
-  setTimeout(openModal, 600);
-}
+document.getElementById('key-btn').addEventListener('click', openModal);
 document.getElementById('q').addEventListener('keydown', function(e){
   if ((e.ctrlKey||e.metaKey) && e.key==='Enter') runSearch();
 });
