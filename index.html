@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MedLit — Literatura Médica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080c14;--surface:#0f1520;--card:#141c2e;--card-hover:#182236;
+  --border:#1e2d45;--border-hi:#2a3f5f;--text:#e2eaf6;--text-muted:#6b82a8;
+  --text-dim:#3d5278;--accent:#4285f4;--accent-lo:#1a2e5e;--green:#10b981;
+  --yellow:#f59e0b;--orange:#f97316;--red:#ef4444;--purple:#8b5cf6;
+  --font-mono:'JetBrains Mono',monospace;--font-sans:'Inter',system-ui,sans-serif;
+  --radius:8px;--radius-lg:12px
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:100;background:rgba(8,12,20,.95);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:52px}
+.logo{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.logo-icon{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.3px}.logo-text span{color:var(--accent)}
+.tabs{display:flex;gap:4px;flex:1}
+.tab-btn{background:none;border:none;color:var(--text-muted);font-family:var(--font-sans);font-size:13px;font-weight:500;padding:6px 12px;border-radius:var(--radius);cursor:pointer;transition:all .15s;white-space:nowrap;min-height:36px}
+.tab-btn:hover{background:var(--surface);color:var(--text)}
+.tab-btn.active{background:var(--accent-lo);color:var(--accent);border:1px solid rgba(66,133,244,.3)}
+.model-select{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-family:var(--font-sans);font-size:11px;padding:5px 8px;border-radius:var(--radius);cursor:pointer;outline:none;flex-shrink:0;min-height:32px}
+.model-select:focus{border-color:var(--accent)}
+.key-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-family:var(--font-sans);font-size:11px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;min-height:32px}
+.key-btn:hover,.key-btn:active{border-color:var(--accent);color:var(--accent)}
+.key-btn.has-key{color:var(--green);border-color:rgba(16,185,129,.4)}
+.key-btn.no-key{color:var(--yellow);border-color:rgba(245,158,11,.4);animation:pulse-btn 2s infinite}
+@keyframes pulse-btn{0%,100%{opacity:1}50%{opacity:.7}}
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{
+  display:none;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,.75);
+  z-index:999;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.modal-overlay.open{display:flex}
+
+/* ── MODAL BOX ── */
+.modal{
+  background:var(--card);
+  border:1px solid var(--border-hi);
+  border-radius:var(--radius-lg);
+  padding:24px;
+  width:100%;
+  max-width:480px;
+  max-height:90vh;
+  overflow-y:auto;
+  position:relative;
+  -webkit-overflow-scrolling:touch;
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.modal h3{font-size:16px;font-weight:600}
+.modal-sub{color:var(--text-muted);font-size:12px;margin-bottom:16px;line-height:1.5}
+.modal-hint{margin-top:12px;font-size:11px;color:var(--text-dim)}
+
+/* ── KEY LIST ── */
+.key-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;min-height:40px}
+.key-empty{text-align:center;padding:16px;color:var(--text-dim);font-size:12px;border:1px dashed var(--border);border-radius:var(--radius)}
+.key-row{display:flex;align-items:center;gap:10px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
+.key-row:hover,.key-row:active{border-color:var(--border-hi)}
+.key-row.active-row{border-color:rgba(66,133,244,.5);background:rgba(66,133,244,.06)}
+.kstat{width:14px;height:14px;border-radius:50%;border:2px solid var(--border-hi);flex-shrink:0}
+.kstat.ok{background:var(--green);border-color:var(--green)}
+.kstat.error{background:var(--red);border-color:var(--red)}
+.kstat.testing{background:var(--yellow);border-color:var(--yellow);animation:kp .7s infinite}
+@keyframes kp{0%,100%{opacity:1}50%{opacity:.3}}
+.key-info{flex:1;min-width:0;overflow:hidden}
+.key-name{font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.key-active-badge{font-size:9px;color:var(--accent);background:var(--accent-lo);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.key-masked{font-size:10px;color:var(--text-dim);font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.key-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ── ADD KEY FORM ── */
+.key-add-form{border-top:1px solid var(--border);padding-top:16px}
+.key-add-label{font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
+.key-add-inputs{display:flex;flex-direction:column;gap:8px}
+.key-add-inputs input{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);font-family:var(--font-sans);
+  font-size:14px;padding:12px 14px;outline:none;
+  -webkit-appearance:none;min-height:44px;
+}
+.key-add-inputs input:focus{border-color:var(--accent)}
+.key-add-err{font-size:12px;color:var(--red);min-height:18px;padding:2px 0}
+.key-add-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;
+  background:var(--accent);border:none;border-radius:var(--radius);
+  color:#fff;font-family:var(--font-sans);font-size:14px;font-weight:500;
+  padding:13px;cursor:pointer;min-height:46px;transition:filter .15s;
+}
+.key-add-btn:hover{filter:brightness(1.1)}
+.key-add-btn:active{filter:brightness(.9)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;font-family:var(--font-sans);font-size:13px;font-weight:500;padding:8px 16px;cursor:pointer;transition:all .15s;white-space:nowrap;text-decoration:none;min-height:36px}
+.btn:hover{filter:brightness(1.1)}.btn:active{filter:brightness(.9)}.btn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-muted)}
+.btn-ghost:hover{border-color:var(--border-hi);color:var(--text);background:var(--surface)}
+.btn-sm{font-size:11px;padding:5px 10px;gap:4px;min-height:30px}
+.btn-green{background:var(--green)}
+
+/* ── MAIN CONTENT ── */
+.container{max-width:1000px;margin:0 auto;padding:28px 20px}
+.search-area{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:24px}
+.search-label{font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}
+textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.6;padding:12px 14px;resize:vertical;min-height:80px;outline:none;-webkit-appearance:none}
+textarea:focus{border-color:var(--accent)}
+textarea::placeholder{color:var(--text-dim)}
+.search-actions{margin-top:12px;display:flex;justify-content:flex-end;gap:8px}
+.sources-bar{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.source-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid}
+.source-pill.on{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:var(--green)}
+.source-pill.off{background:rgba(255,255,255,.03);border-color:var(--border);color:var(--text-dim)}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.depth-badge{margin-left:auto;font-size:10px;padding:3px 10px;border-radius:12px;font-weight:600;white-space:nowrap}
+.depth-1{background:rgba(107,130,168,.1);color:var(--text-muted);border:1px solid var(--border)}
+.depth-2{background:rgba(66,133,244,.1);color:var(--accent);border:1px solid rgba(66,133,244,.25)}
+.depth-3{background:rgba(139,92,246,.1);color:var(--purple);border:1px solid rgba(139,92,246,.25)}
+.depth-4{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.25)}
+
+/* ── STEPPER ── */
+.stepper{display:flex;align-items:center;margin-bottom:28px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);gap:0;overflow-x:auto}
+.stepper.hidden{display:none}
+.step{display:flex;align-items:center;gap:8px;flex:1;position:relative;min-width:80px}
+.step:not(:last-child)::after{content:'';position:absolute;height:1px;background:var(--border);left:26px;right:0}
+.step.done:not(:last-child)::after{background:var(--green)}
+.sdot2{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--text-dim);flex-shrink:0;position:relative;z-index:1;background:var(--surface)}
+.step.active .sdot2{border-color:var(--accent);color:var(--accent);animation:pulse 1.5s infinite}
+.step.done .sdot2{background:var(--green);border-color:var(--green);color:#fff}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(66,133,244,.15)}50%{box-shadow:0 0 0 6px rgba(66,133,244,.05)}}
+.step-label{font-size:10px;color:var(--text-dim);white-space:nowrap}
+.step.active .step-label{color:var(--accent)}.step.done .step-label{color:var(--green)}
+
+/* ── RESULTS ── */
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.results-title{font-size:13px;font-weight:500;color:var(--text-muted)}
+.results-title strong{color:var(--text)}
+.synthesis-box{background:linear-gradient(135deg,rgba(66,133,244,.08),rgba(139,92,246,.05));border:1px solid rgba(66,133,244,.25);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px}
+.synthesis-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.synthesis-pico{font-size:11px;color:var(--text-muted);margin-bottom:10px;font-family:var(--font-mono);padding:6px 10px;background:rgba(0,0,0,.2);border-radius:4px}
+.synthesis-text{font-size:14px;line-height:1.7}
+.papers-list{display:flex;flex-direction:column;gap:12px}
+.paper-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
+.paper-card:hover{border-color:var(--border-hi);background:var(--card-hover)}
+.paper-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;letter-spacing:.3px;white-space:nowrap}
+.badge-ev-1a,.badge-ev-1b{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.badge-ev-2a,.badge-ev-2b{background:rgba(66,133,244,.15);color:var(--accent);border:1px solid rgba(66,133,244,.3)}
+.badge-ev-3{background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+.badge-ev-4{background:rgba(249,115,22,.15);color:var(--orange);border:1px solid rgba(249,115,22,.3)}
+.badge-ev-5{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.badge-pubmed{background:rgba(29,111,164,.2);color:#60b4ea;border:1px solid rgba(29,111,164,.4)}
+.badge-ss{background:rgba(26,135,84,.2);color:#5dd898;border:1px solid rgba(26,135,84,.4)}
+.badge-google{background:rgba(66,133,244,.2);color:#93bbfb;border:1px solid rgba(66,133,244,.4)}
+.badge-both{background:rgba(109,40,217,.2);color:#c4b5fd;border:1px solid rgba(109,40,217,.4)}
+.badge-type{background:rgba(255,255,255,.05);color:var(--text-muted);border:1px solid var(--border)}
+.rdots{display:flex;gap:2px;margin-left:auto}
+.rdot{width:5px;height:5px;border-radius:50%;background:var(--border)}
+.rdot.on{background:var(--accent)}
+.paper-title{font-size:14px;font-weight:500;margin-bottom:4px;line-height:1.4}
+.paper-meta{font-size:11px;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.citas{color:var(--yellow)}
+.paper-summary{font-size:13px;line-height:1.6;margin-bottom:8px}
+.paper-aporte{font-size:12px;color:var(--green);margin-bottom:4px;padding-left:10px;border-left:2px solid var(--green)}
+.paper-limitacion{font-size:12px;color:var(--text-muted);margin-bottom:12px;padding-left:10px;border-left:2px solid var(--border)}
+.paper-actions{display:flex;flex-wrap:wrap;gap:6px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* ── CRITIC ── */
+.critic-tabs{display:flex;gap:4px;margin-bottom:12px}
+.critic-tab{background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);font-family:var(--font-sans);font-size:12px;padding:5px 12px;cursor:pointer}
+.critic-tab.active{background:var(--accent-lo);color:var(--accent);border-color:rgba(66,133,244,.3)}
+.file-drop{border:2px dashed var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center;cursor:pointer;color:var(--text-muted)}
+.file-drop:hover,.file-drop.dg{border-color:var(--accent);color:var(--accent);background:rgba(66,133,244,.03)}
+.file-drop-icon{font-size:28px;margin-bottom:8px}
+.file-name{font-family:var(--font-mono);font-size:11px;color:var(--green);margin-top:8px}
+#pdf-input{display:none}
+
+/* ── VERDICT / COLL ── */
+.analysis-result{display:flex;flex-direction:column;gap:12px}
+.verdict-box{border-radius:var(--radius-lg);padding:20px;border:1px solid}
+.verdict-box.alta{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.05)}
+.verdict-box.moderada{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.05)}
+.verdict-box.baja{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.05)}
+.verdict-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.verdict-box.alta .verdict-label{color:var(--green)}.verdict-box.moderada .verdict-label{color:var(--yellow)}.verdict-box.baja .verdict-label{color:var(--red)}
+.verdict-recom{display:inline-block;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:8px}
+.verdict-box.alta .verdict-recom{background:rgba(16,185,129,.15);color:var(--green)}
+.verdict-box.moderada .verdict-recom{background:rgba(245,158,11,.15);color:var(--yellow)}
+.verdict-box.baja .verdict-recom{background:rgba(239,68,68,.15);color:var(--red)}
+.verdict-text{font-size:14px;line-height:1.7}
+.coll{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.coll-h{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none}
+.coll-h:hover{background:var(--card-hover)}
+.coll-title{font-size:13px;font-weight:500}
+.coll-arrow{color:var(--text-muted);font-size:12px;transition:transform .2s}
+.coll.open .coll-arrow{transform:rotate(90deg)}
+.coll-body{display:none;padding:0 18px 16px;border-top:1px solid var(--border)}
+.coll.open .coll-body{display:block}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:14px}
+.ikey{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.ival{font-size:13px}
+.bias-list{display:flex;flex-direction:column;gap:8px;padding-top:14px}
+.bias-item{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 12px;background:var(--surface);border-radius:var(--radius);align-items:start}
+.bias-tipo{font-size:12px;font-weight:500;margin-bottom:2px}
+.bias-desc{font-size:12px;color:var(--text-muted)}
+.bimpact{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;white-space:nowrap}
+.bimpact.alto{background:rgba(239,68,68,.15);color:var(--red)}
+.bimpact.medio{background:rgba(245,158,11,.15);color:var(--yellow)}
+.bimpact.bajo{background:rgba(16,185,129,.15);color:var(--green)}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;padding-top:8px}
+.tag{font-size:11px;padding:3px 10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text-muted)}
+
+/* ── MISC ── */
+.empty-state{text-align:center;padding:56px 24px;color:var(--text-dim)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.5}
+.empty-state p{font-size:14px;margin-bottom:4px}
+.empty-state small{font-size:12px}
+.error-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius);padding:12px 16px;font-size:13px;color:#fca5a5;margin-bottom:16px}
+.sk{background:linear-gradient(90deg,var(--card) 25%,var(--card-hover) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:12px}
+
+/* ── HIDDEN ── */
+.hidden{display:none !important}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  header{padding:0 10px;gap:8px;height:50px}
+  .tabs .tab-btn{font-size:12px;padding:5px 10px}
+  .model-select{max-width:95px;font-size:10px}
+  .key-btn{font-size:10px;padding:5px 10px}
+  .container{padding:16px 12px}
+  .step-label{display:none}
+  .igrid{grid-template-columns:1fr}
+  .modal{padding:20px 16px 28px}
+  .paper-actions{gap:4px}
+}
+@media(max-width:360px){
+  .logo-text{display:none}
+  .model-select{max-width:80px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧬</div>
+    <div class="logo-text">Med<span>Lit</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('search')">🔍 Buscar</button>
+    <button class="tab-btn" onclick="switchTab('critic')">🔬 Analizar</button>
+  </div>
+  <select class="model-select" id="model-select" onchange="onModelChange(this.value)">
+    <option value="gemini-2.0-flash-lite">⚡ Rápido</option>
+    <option value="gemini-2.0-flash" selected>◆ Estándar</option>
+    <option value="gemini-1.5-pro">🔷 Profundo</option>
+    <option value="gemini-2.5-pro-preview-06-05">💎 Máximo</option>
+  </select>
+  <button class="key-btn no-key" id="key-btn" onclick="openModal()">✦ Keys</button>
+</header>
+
+<!-- ═══ MODAL ═══ -->
+<div id="modal" class="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>🔑 API Keys Gemini</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕ Cerrar</button>
+    </div>
+    <p class="modal-sub">
+      Se guardan <strong>solo en este navegador</strong>. Con varias keys se rota automáticamente si una llega al límite.
+      Tocá una fila para activarla.
+    </p>
+
+    <div class="key-list" id="key-list">
+      <div class="key-empty">Sin keys guardadas — agregá la primera abajo</div>
+    </div>
+
+    <div class="key-add-form">
+      <div class="key-add-label">Nueva key</div>
+      <div class="key-add-inputs">
+        <input id="new-label" type="text" placeholder="Nombre (ej: Mi cuenta)" autocomplete="off">
+        <input id="new-key" type="text" placeholder="Pegá tu API key aquí..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <div class="key-add-err" id="key-add-err"></div>
+        <button class="key-add-btn" onclick="addKey()">+ Agregar Key</button>
+      </div>
+    </div>
+    <p class="modal-hint">Keys en <strong>aistudio.google.com</strong> → Get API Key (es gratis)</p>
+  </div>
+</div>
+
+<main class="container">
+
+  <!-- ─── TAB BUSCAR ─── -->
+  <section id="tab-search">
+    <div class="sources-bar">
+      <div class="source-pill off" id="pill-pm"><div class="sdot"></div>PubMed</div>
+      <div class="source-pill off" id="pill-ss"><div class="sdot"></div>Semantic Scholar</div>
+      <div class="source-pill off" id="pill-gs"><div class="sdot"></div>Google Scholar</div>
+      <div class="source-pill off" id="pill-ai"><div class="sdot"></div>Gemini</div>
+      <div class="depth-badge depth-2" id="depth-badge">◆ Estándar</div>
+    </div>
+    <div class="search-area">
+      <div class="search-label">Pregunta clínica</div>
+      <textarea id="q" rows="3" placeholder="Ej: ¿Cuál es el mejor momento quirúrgico para pectus excavatum en adolescentes? (Ctrl+Enter para buscar)"></textarea>
+      <div class="search-actions">
+        <button class="btn btn-ghost btn-sm" onclick="clearSearch()">Limpiar</button>
+        <button class="btn" id="search-btn" onclick="runSearch()">Buscar</button>
+      </div>
+    </div>
+    <div class="stepper hidden" id="stepper">
+      <div class="step" id="s1"><div class="sdot2">1</div><div class="step-label">Queries</div></div>
+      <div class="step" id="s2"><div class="sdot2">2</div><div class="step-label">PubMed</div></div>
+      <div class="step" id="s3"><div class="sdot2">3</div><div class="step-label">Sem.Scholar</div></div>
+      <div class="step" id="s4"><div class="sdot2">G</div><div class="step-label">Google Scholar</div></div>
+      <div class="step" id="s5"><div class="sdot2">✦</div><div class="step-label">Síntesis</div></div>
+    </div>
+    <div class="error-box hidden" id="search-err"></div>
+    <div id="search-results">
+      <div class="empty-state">
+        <div class="empty-icon">📚</div>
+        <p>Hacé tu pregunta clínica para comenzar</p>
+        <small>PubMed · Semantic Scholar · Google Scholar · Gemini</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TAB ANALIZAR ─── -->
+  <section id="tab-critic" class="hidden">
+    <div class="search-area">
+      <div class="search-label">Artículo a analizar</div>
+      <div class="critic-tabs">
+        <button class="critic-tab active" onclick="setCriticMode('text')">📝 Pegar texto</button>
+        <button class="critic-tab" onclick="setCriticMode('pdf')">📄 Subir PDF</button>
+      </div>
+      <div id="critic-text-area">
+        <textarea id="critic-text" rows="7" placeholder="Pegá el abstract o texto completo..."></textarea>
+      </div>
+      <div id="critic-pdf-area" class="hidden">
+        <div class="file-drop" id="drop-zone"
+          onclick="document.getElementById('pdf-input').click()"
+          ondragover="event.preventDefault();this.classList.add('dg')"
+          ondragleave="this.classList.remove('dg')"
+          ondrop="handleDrop(event)">
+          <div class="file-drop-icon">📄</div>
+          <p>Hacé click o arrastrá un PDF</p>
+          <small>Máximo 10 MB</small>
+          <div class="file-name hidden" id="file-name"></div>
+        </div>
+        <input type="file" id="pdf-input" accept=".pdf" onchange="loadPDF(this.files[0])">
+      </div>
+      <div class="search-actions" style="margin-top:12px">
+        <button class="btn btn-ghost btn-sm" onclick="clearCritic()">Limpiar</button>
+        <button class="btn" id="critic-btn" onclick="runCritic()">Analizar</button>
+      </div>
+    </div>
+    <div class="error-box hidden" id="critic-err"></div>
+    <div id="critic-results">
+      <div class="empty-state">
+        <div class="empty-icon">🔬</div>
+        <p>Pegá un abstract o subí un PDF para analizarlo</p>
+        <small>Metodología · Sesgos · Nivel de evidencia · Aplicabilidad en Chile</small>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  MODELS
+// ═══════════════════════════════════════════════════
+const MODELS = {
+  'gemini-2.0-flash-lite':        { label:'Rápido',   icon:'⚡', depthClass:'depth-1', papers:'4-5',  summaryLen:'breve (1-2 frases)',     note:'Rápido y económico' },
+  'gemini-2.0-flash':             { label:'Estándar', icon:'◆',  depthClass:'depth-2', papers:'6-8',  summaryLen:'estándar (2-3 frases)',  note:'Balance calidad/velocidad' },
+  'gemini-1.5-pro':               { label:'Profundo', icon:'🔷', depthClass:'depth-3', papers:'8-10', summaryLen:'detallada (3-4 frases)',  note:'Mayor contexto y detalle' },
+  'gemini-2.5-pro-preview-06-05': { label:'Máximo',   icon:'💎', depthClass:'depth-4', papers:'10-12',summaryLen:'exhaustiva (4-5 frases)',note:'Análisis exhaustivo' },
+};
+const getModel  = ()  => localStorage.getItem('medlit_model') || 'gemini-2.0-flash';
+const saveModel = m   => localStorage.setItem('medlit_model', m);
+const modelMeta = ()  => MODELS[getModel()] || MODELS['gemini-2.0-flash'];
+function onModelChange(v){ saveModel(v); updateUI(); }
+
+// ═══════════════════════════════════════════════════
+//  KEYS
+// ═══════════════════════════════════════════════════
+function getKeys() {
+  try { return JSON.parse(localStorage.getItem('medlit_keys') || '[]'); } catch { return []; }
+}
+function saveKeys(ks){ localStorage.setItem('medlit_keys', JSON.stringify(ks)); }
+function getActIdx(){
+  var i = parseInt(localStorage.getItem('medlit_active') || '0');
+  var ks = getKeys();
+  return i < ks.length ? i : 0;
+}
+function setActIdx(i){ localStorage.setItem('medlit_active', String(i)); }
+
+function getKey(){
+  var ks = getKeys();
+  if (!ks.length) return null;
+  return ks[getActIdx()].key || ks[0].key || null;
+}
+
+function rotateKey(){
+  var ks = getKeys();
+  if (ks.length < 2) return getKey();
+  var next = (getActIdx() + 1) % ks.length;
+  setActIdx(next);
+  return ks[next].key || null;
+}
+
+// Migra key antigua del formato previo
+function migrateOldKey(){
+  var old = localStorage.getItem('medlit_gemini');
+  if (old && old.length > 10) {
+    var ks = getKeys();
+    if (!ks.some(function(k){ return k.key === old; })) {
+      ks.unshift({ id: Date.now(), label: 'Mi Key', key: old, status: 'untested' });
+      saveKeys(ks);
+    }
+    localStorage.removeItem('medlit_gemini');
+  }
+}
+
+function addKey(){
+  var label = (document.getElementById('new-label').value || '').trim();
+  var key   = (document.getElementById('new-key').value || '').trim();
+  var errEl = document.getElementById('key-add-err');
+
+  errEl.textContent = '';
+
+  if (!key) { errEl.textContent = 'Pegá tu API key primero'; return; }
+  if (key.length < 15 || /\s/.test(key)) { errEl.textContent = 'La key no parece válida — copiala sin espacios'; return; }
+
+  var ks = getKeys();
+  if (ks.some(function(k){ return k.key === key; })) { errEl.textContent = 'Esta key ya está guardada'; return; }
+
+  if (!label) label = 'Key ' + (ks.length + 1);
+  ks.push({ id: Date.now(), label: label, key: key, status: 'untested' });
+  saveKeys(ks);
+
+  document.getElementById('new-label').value = '';
+  document.getElementById('new-key').value   = '';
+  renderKeyList();
+  updateUI();
+}
+
+function deleteKey(id){
+  saveKeys(getKeys().filter(function(k){ return k.id !== id; }));
+  setActIdx(0);
+  renderKeyList();
+  updateUI();
+}
+
+function activateKey(id){
+  var ks = getKeys();
+  var i  = ks.findIndex(function(k){ return k.id === id; });
+  if (i >= 0) setActIdx(i);
+  renderKeyList();
+  updateUI();
+}
+
+async function testKey(id){
+  var ks = getKeys();
+  var k  = ks.find(function(k){ return k.id === id; });
+  if (!k) return;
+
+  k.status = 'testing';
+  saveKeys(ks);
+  renderKeyList();
+
+  try {
+    var res = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + k.key,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contents:[{ parts:[{ text:'Say OK' }] }] }) }
+    );
+    var ks2 = getKeys();
+    var k2  = ks2.find(function(k){ return k.id === id; });
+    if (k2) { k2.status = res.ok ? 'ok' : 'error'; saveKeys(ks2); }
+  } catch(e) {
+    var ks2 = getKeys();
+    var k2  = ks2.find(function(k){ return k.id === id; });
+    if (k2) { k2.status = 'error'; saveKeys(ks2); }
+  }
+  renderKeyList();
+  updateUI();
+}
+
+function renderKeyList(){
+  var ks     = getKeys();
+  var active = getActIdx();
+  var el     = document.getElementById('key-list');
+  if (!el) return;
+
+  if (!ks.length) {
+    el.innerHTML = '<div class="key-empty">Sin keys guardadas — agregá la primera abajo</div>';
+    return;
+  }
+
+  el.innerHTML = ks.map(function(k, i){
+    var isAct = i === active;
+    var sClass = k.status === 'ok' ? 'ok' : k.status === 'error' ? 'error' : k.status === 'testing' ? 'testing' : '';
+    var masked = k.key.substring(0,6) + '••••••' + k.key.slice(-3);
+    var testTxt = k.status === 'testing' ? '…' : k.status === 'ok' ? '✓ OK' : k.status === 'error' ? '✗ Falla' : 'Probar';
+    var testStyle = k.status === 'ok'
+      ? 'background:rgba(16,185,129,.15);color:#10b981;border-color:rgba(16,185,129,.4)'
+      : k.status === 'error'
+      ? 'background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.4)'
+      : '';
+    return '<div class="key-row' + (isAct ? ' active-row' : '') + '" onclick="activateKey(' + k.id + ')">'
+      + '<div class="kstat ' + sClass + '"></div>'
+      + '<div class="key-info">'
+      + '<div class="key-name">' + x(k.label) + (isAct ? '<span class="key-active-badge">activa</span>' : '') + '</div>'
+      + '<div class="key-masked">' + masked + '</div>'
+      + '</div>'
+      + '<div class="key-actions">'
+      + '<button class="btn btn-ghost btn-sm" style="' + testStyle + '" onclick="event.stopPropagation();testKey(' + k.id + ')" ' + (k.status==='testing'?'disabled':'') + '>' + testTxt + '</button>'
+      + '<button class="btn btn-ghost btn-sm" style="color:#ef4444;border-color:rgba(239,68,68,.25)" onclick="event.stopPropagation();deleteKey(' + k.id + ')">✕</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════════════
+function openModal(){
+  renderKeyList();
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleOverlayClick(e){
+  if (e.target === document.getElementById('modal')) closeModal();
+}
+// Enter en campos de key
+document.getElementById('new-key').addEventListener('keydown', function(e){ if(e.key==='Enter') addKey(); });
+document.getElementById('new-label').addEventListener('keydown', function(e){ if(e.key==='Enter') addKey(); });
+
+// ═══════════════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════════════
+function updateUI(){
+  var ks      = getKeys();
+  var okCount = ks.filter(function(k){ return k.status === 'ok'; }).length;
+  var total   = ks.length;
+  var mm      = modelMeta();
+
+  var btn = document.getElementById('key-btn');
+  if (!total) {
+    btn.textContent = '✦ Agregar Key';
+    btn.className = 'key-btn no-key';
+  } else if (okCount === 0) {
+    btn.textContent = '✦ Keys (' + total + ')';
+    btn.className = 'key-btn has-key';
+  } else {
+    btn.textContent = '✦ Keys ' + okCount + '/' + total + ' ✓';
+    btn.className = 'key-btn has-key';
+  }
+
+  var hasAny = total > 0;
+  ['pill-pm','pill-ss','pill-gs','pill-ai'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.className = 'source-pill ' + (hasAny ? 'on' : 'off');
+  });
+
+  var db = document.getElementById('depth-badge');
+  if (db){ db.textContent = mm.icon + ' ' + mm.label; db.className = 'depth-badge ' + mm.depthClass; }
+
+  var ms = document.getElementById('model-select');
+  if (ms) ms.value = getModel();
+}
+
+// ═══════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════
+function switchTab(t){
+  document.getElementById('tab-search').classList.toggle('hidden', t !== 'search');
+  document.getElementById('tab-critic').classList.toggle('hidden', t !== 'critic');
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){
+    b.classList.toggle('active', (i===0&&t==='search')||(i===1&&t==='critic'));
+  });
+}
+function setCriticMode(m){
+  document.getElementById('critic-text-area').classList.toggle('hidden', m !== 'text');
+  document.getElementById('critic-pdf-area').classList.toggle('hidden', m !== 'pdf');
+  document.querySelectorAll('.critic-tab').forEach(function(b,i){
+    b.classList.toggle('active', (i===0&&m==='text')||(i===1&&m==='pdf'));
+  });
+  pdfB64 = null;
+}
+
+// ═══════════════════════════════════════════════════
+//  GEMINI API
+// ═══════════════════════════════════════════════════
+var GEMINI_URL = function(key, model){
+  return 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
+};
+
+async function gemini(parts, useSearch){
+  var key = getKey();
+  if (!key) throw new Error('Configurá una API Key primero (botón ✦ Keys).');
+  var model = getModel();
+  var body = { contents:[{ parts:parts }], generationConfig:{ temperature:0.1 } };
+  if (useSearch) body.tools = [{ google_search:{} }];
+
+  var res = await fetch(GEMINI_URL(key, model), {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+
+  if (res.status === 429) {
+    var next = rotateKey();
+    if (next && next !== key) {
+      await sleep(800);
+      res = await fetch(GEMINI_URL(next, model), {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+      });
+    }
+  }
+
+  if (!res.ok) {
+    var err = await res.json().catch(function(){ return {}; });
+    throw new Error((err.error && err.error.message) || ('Gemini error ' + res.status));
+  }
+  var data = await res.json();
+  return (data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts||[])
+    .map(function(p){ return p.text||''; }).join('');
+}
+
+function parseJSON(text){
+  var clean = text.replace(/```json|```/g,'').trim();
+  var match = clean.match(/[\[{][\s\S]*[\]}]/);
+  return JSON.parse(match ? match[0] : clean);
+}
+
+// ═══════════════════════════════════════════════════
+//  PUBMED
+// ═══════════════════════════════════════════════════
+var PM = 'tool=MedLitApp&email=medlit@app.local';
+
+async function pubmedSearch(query){
+  await sleep(300);
+  var r = await fetch('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=' + encodeURIComponent(query) + '&retmax=15&retmode=json&sort=relevance&' + PM);
+  var d = await r.json();
+  return (d.esearchresult && d.esearchresult.idlist) || [];
+}
+
+async function pubmedFetch(pmids){
+  if (!pmids.length) return [];
+  await sleep(400);
+  var r = await fetch('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=' + pmids.join(',') + '&retmode=xml&rettype=abstract&' + PM);
+  return parsePubmedXML(await r.text());
+}
+
+function parsePubmedXML(xml){
+  var doc = new DOMParser().parseFromString(xml, 'text/xml');
+  return Array.from(doc.querySelectorAll('PubmedArticle')).map(function(art){
+    var g = function(s){ return (art.querySelector(s)&&art.querySelector(s).textContent&&art.querySelector(s).textContent.trim())||''; };
+    var pmid    = g('PMID');
+    var titulo  = g('ArticleTitle');
+    var abstract = Array.from(art.querySelectorAll('AbstractText')).map(function(n){ return n.textContent.trim(); }).join(' ');
+    var auNodes = art.querySelectorAll('Author');
+    var autores = Array.from(auNodes).slice(0,3).map(function(a){
+      return ((a.querySelector('LastName')&&a.querySelector('LastName').textContent)||'') + ' ' + ((a.querySelector('Initials')&&a.querySelector('Initials').textContent)||'');
+    }).join(', ') + (auNodes.length > 3 ? ', et al.' : '');
+    var revista = g('ISOAbbreviation') || g('Journal Title');
+    var anio    = g('PubDate Year') || (g('MedlineDate')||'').substring(0,4);
+    var doi     = Array.from(art.querySelectorAll('ArticleId')).filter(function(n){ return n.getAttribute('IdType')==='doi'; }).map(function(n){ return n.textContent; })[0] || null;
+    return { pmid:pmid, titulo:titulo, abstract:abstract, autores:autores, revista:revista, anio:anio, doi:doi, fuente:'pubmed', citas:0, oa:null, ssid:null };
+  }).filter(function(p){ return p.titulo && p.abstract; });
+}
+
+// ═══════════════════════════════════════════════════
+//  SEMANTIC SCHOLAR
+// ═══════════════════════════════════════════════════
+async function ssSearch(query){
+  await sleep(500);
+  var fields = 'paperId,title,abstract,authors,year,venue,citationCount,openAccessPdf,externalIds';
+  try {
+    var r = await fetch('https://api.semanticscholar.org/graph/v1/paper/search?query=' + encodeURIComponent(query) + '&limit=12&fields=' + fields);
+    if (!r.ok) return [];
+    var d = await r.json();
+    return (d.data||[]).filter(function(p){ return p.abstract; }).map(function(p){
+      return {
+        pmid:   (p.externalIds&&p.externalIds.PubMed)||null,
+        ssid:   p.paperId,
+        titulo: p.title,
+        abstract: p.abstract,
+        autores: (p.authors||[]).slice(0,3).map(function(a){ return a.name; }).join(', ') + (p.authors&&p.authors.length>3?', et al.':''),
+        revista: p.venue||'',
+        anio:    String(p.year||''),
+        doi:     (p.externalIds&&p.externalIds.DOI)||null,
+        fuente:  'semantic_scholar',
+        citas:   p.citationCount||0,
+        oa:      (p.openAccessPdf&&p.openAccessPdf.url)||null
+      };
+    });
+  } catch(e){ return []; }
+}
+
+// ═══════════════════════════════════════════════════
+//  GOOGLE SCHOLAR via Gemini
+// ═══════════════════════════════════════════════════
+async function gsSearch(query){
+  var mm = modelMeta();
+  var prompt = 'You are a medical literature assistant. Search for recent peer-reviewed papers about: "' + query + '"\nFocus on systematic reviews, meta-analyses, RCTs. Find ' + mm.papers + ' papers.\nReturn ONLY a JSON array:\n[{"titulo":"","autores":"","revista":"","anio":"","doi":null,"abstract":""}]';
+  try {
+    var text   = await gemini([{ text:prompt }], true);
+    var papers = parseJSON(text);
+    return Array.isArray(papers) ? papers.filter(function(p){ return p.titulo; }).map(function(p){
+      return Object.assign({}, p, { fuente:'google_scholar', citas:0, oa:null, pmid:null, ssid:null });
+    }) : [];
+  } catch(e){ return []; }
+}
+
+// ═══════════════════════════════════════════════════
+//  MERGE
+// ═══════════════════════════════════════════════════
+function mergeAll(pub, ss, gs){
+  var merged = [], seen = {};
+  var norm = function(t){ return (t||'').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,50); };
+  var keyOf = function(p){ return (p.doi&&p.doi.toLowerCase().trim()) || norm(p.titulo); };
+  var upsert = function(p){
+    var k = keyOf(p);
+    if (seen[k] !== undefined) {
+      var i = seen[k];
+      merged[i].fuente = 'ambos';
+      merged[i].citas  = Math.max(merged[i].citas||0, p.citas||0);
+      merged[i].oa     = merged[i].oa || p.oa;
+      merged[i].ssid   = merged[i].ssid || p.ssid;
+      if (!merged[i].abstract && p.abstract) merged[i].abstract = p.abstract;
+    } else {
+      seen[k] = merged.length;
+      merged.push(Object.assign({}, p));
+    }
+  };
+  pub.forEach(upsert); ss.forEach(upsert); gs.forEach(upsert);
+  return merged;
+}
+
+// ═══════════════════════════════════════════════════
+//  PROMPTS
+// ═══════════════════════════════════════════════════
+var P_QB = 'Eres asistente de búsqueda bibliográfica. Convierte la pregunta clínica en queries. Responde SOLO JSON:\n{"pubmed_query":"query MeSH en inglés","ss_query":"query semántica en inglés"}';
+
+function buildSumPrompt(query, papers, stats){
+  var mm = modelMeta();
+  return 'Eres asistente para residente de cirugía pediátrica en Chile.\nSeleccioná los ' + mm.papers + ' papers más relevantes. Resúmenes ' + mm.summaryLen + '.\nResponde SOLO JSON válido:\n{"pregunta_reformulada":"PICO","sintesis":"párrafo en español","articulos":[{"id_unico":"","fuente":"pubmed|semantic_scholar|google_scholar|ambos","titulo":"","autores":"","revista":"","anio":"","doi":null,"pmid":null,"ssid":null,"relevancia":5,"citas":0,"oa":null,"tipo_estudio":"","nivel_evidencia":"1a|1b|2a|2b|3|4|5","resumen_esp":"","aporte_principal":"","limitaciones":""}]}\n\nPREGUNTA: ' + query + '\n\nPAPERS (' + papers.length + ' — PubMed:' + stats.pub + ' SS:' + stats.ss + ' Google:' + stats.gs + '):\n' + JSON.stringify(papers,null,1);
+}
+
+function buildCritPrompt(){
+  var mm = modelMeta();
+  return 'Eres metodólogo experto en cirugía pediátrica. Nivel: ' + mm.label + '.\nAnalizá el artículo. Responde SOLO JSON:\n{"datos_basicos":{"titulo":"","autores":"","revista":"","anio":"","doi":null,"tipo_estudio":"","nivel_evidencia_oxford":"1a|1b|2a|2b|3|4|5","nivel_evidencia_grade":"Alto|Moderado|Bajo|Muy bajo"},"pregunta_investigacion":{"pico":{"poblacion":"","intervencion":"","comparacion":null,"outcome":""},"hipotesis":""},"metodologia":{"diseno":"","n_muestra":"","seguimiento":"","aleatorizacion":null,"cegamiento":null,"analisis_estadistico":"","puntuacion_metodologica":5,"justificacion_puntuacion":""},"resultados":{"outcome_primario":"","significancia_estadistica":"","significancia_clinica":"","efecto_tamano":null},"sesgos":[{"tipo":"","descripcion":"","impacto":"Alto|Medio|Bajo"}],"fortalezas":[],"limitaciones":[],"aplicabilidad":{"contexto_chile":"","poblacion_pediatrica":"","cambio_practica":""},"veredicto":{"calidad_global":"Alta|Moderada|Baja","resumen":"","recomendacion":"Adoptar|Considerar con cautela|No adoptar|Requiere más evidencia"}}';
+}
+
+// ═══════════════════════════════════════════════════
+//  SEARCH FLOW
+// ═══════════════════════════════════════════════════
+var pdfB64 = null, lastResults = [];
+
+async function runSearch(){
+  var query = document.getElementById('q').value.trim();
+  if (!query) return;
+  if (!getKey()){
+    showErr('search', 'Primero agregá una API Key (botón ✦ Keys en la barra de arriba).');
+    openModal();
+    return;
+  }
+  setStep(0); showStep(); clearErr('search'); showSkels();
+  disBtn('search-btn', true);
+  try {
+    setStep(1);
+    var queries;
+    try {
+      var qbText = await gemini([{ text: P_QB + '\n\nPregunta: ' + query }]);
+      queries = parseJSON(qbText);
+    } catch(e) {
+      queries = { pubmed_query: query + ' pediatric surgery systematic review', ss_query: query };
+    }
+
+    setStep(2);
+    var pmids     = await pubmedSearch(queries.pubmed_query);
+    var pubPapers = await pubmedFetch(pmids);
+
+    setStep(3);
+    var ssPapers = await ssSearch(queries.ss_query);
+
+    setStep(4);
+    var gsPapers = await gsSearch(query);
+
+    var all = mergeAll(pubPapers, ssPapers, gsPapers);
+    if (!all.length) throw new Error('No se encontraron artículos. Intentá reformular la pregunta.');
+
+    setStep(5);
+    var payload = all.map(function(p){
+      return { pmid:p.pmid, ssid:p.ssid, fuente:p.fuente, titulo:p.titulo, autores:p.autores, revista:p.revista, anio:p.anio, doi:p.doi, citas:p.citas, oa:p.oa, abstract:(p.abstract||'').substring(0,600) };
+    });
+    var stats = { pub:pubPapers.length, ss:ssPapers.length, gs:gsPapers.length };
+    var sumPrompt = buildSumPrompt(query, payload, stats);
+
+    var analysis;
+    try { analysis = parseJSON(await gemini([{ text:sumPrompt }])); }
+    catch(e) { analysis = parseJSON(await gemini([{ text:sumPrompt + '\nSOLO JSON.' }])); }
+
+    lastResults = analysis.articulos || [];
+    renderResults(analysis, Object.assign({ total:all.length }, stats));
+    hideStep();
+  } catch(e) {
+    showErr('search', e.message);
+    hideStep();
+    emptyState('search-results', '⚠️', e.message, '');
+  } finally { disBtn('search-btn', false); }
+}
+
+function clearSearch(){
+  document.getElementById('q').value = '';
+  emptyState('search-results','📚','Hacé tu pregunta clínica para comenzar','PubMed · Semantic Scholar · Google Scholar · Gemini');
+  hideStep(); clearErr('search'); lastResults = [];
+}
+
+// ═══════════════════════════════════════════════════
+//  CRITIC FLOW
+// ═══════════════════════════════════════════════════
+async function runCritic(){
+  if (!getKey()){
+    showErr('critic','Primero agregá una API Key (botón ✦ Keys en la barra de arriba).');
+    openModal();
+    return;
+  }
+  var isText = !document.getElementById('critic-text-area').classList.contains('hidden');
+  var text   = document.getElementById('critic-text').value.trim();
+  if (isText && !text) { showErr('critic','Pegá el texto del artículo primero.'); return; }
+  if (!isText && !pdfB64) { showErr('critic','Subí un PDF primero.'); return; }
+
+  clearErr('critic'); disBtn('critic-btn', true);
+  document.getElementById('critic-results').innerHTML = skelCritic();
+  try {
+    var prompt = buildCritPrompt();
+    var parts;
+    if (isText) {
+      parts = [{ text: prompt + '\n\nARTÍCULO:\n' + text }];
+    } else {
+      parts = [{ inline_data:{ mime_type:'application/pdf', data:pdfB64 } }, { text:prompt }];
+    }
+    var analysis;
+    try { analysis = parseJSON(await gemini(parts)); }
+    catch(e) { analysis = parseJSON(await gemini(parts.concat([{ text:'\nSOLO JSON.' }]))); }
+    renderCritic(analysis);
+  } catch(e) {
+    showErr('critic', e.message);
+    emptyState('critic-results','⚠️', e.message, '');
+  } finally { disBtn('critic-btn', false); }
+}
+
+function clearCritic(){
+  document.getElementById('critic-text').value = '';
+  pdfB64 = null;
+  document.getElementById('file-name').classList.add('hidden');
+  emptyState('critic-results','🔬','Pegá un abstract o subí un PDF para analizarlo','Metodología · Sesgos · Nivel de evidencia · Aplicabilidad en Chile');
+  clearErr('critic');
+}
+
+// ═══════════════════════════════════════════════════
+//  PDF
+// ═══════════════════════════════════════════════════
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dg');
+  var f = e.dataTransfer.files[0];
+  if (f && f.type === 'application/pdf') loadPDF(f);
+}
+function loadPDF(file){
+  if (!file) return;
+  if (file.size > 10*1024*1024) { showErr('critic','El PDF supera 10 MB.'); return; }
+  var r = new FileReader();
+  r.onload = function(e){
+    pdfB64 = e.target.result.split(',')[1];
+    var n = document.getElementById('file-name');
+    n.textContent = '✓ ' + file.name;
+    n.classList.remove('hidden');
+  };
+  r.readAsDataURL(file);
+}
+
+// ═══════════════════════════════════════════════════
+//  ZOTERO RIS
+// ═══════════════════════════════════════════════════
+function generateRIS(papers){
+  return papers.map(function(p){
+    return ['TY  - JOUR','TI  - '+(p.titulo||''),'AU  - '+(p.autores||''),'PY  - '+(p.anio||''),'JO  - '+(p.revista||''),
+      p.doi?'DO  - '+p.doi:'', p.pmid?'AN  - PMID:'+p.pmid:'',
+      p.pmid?'UR  - https://pubmed.ncbi.nlm.nih.gov/'+p.pmid+'/':'','ER  - '].filter(Boolean).join('\n');
+  }).join('\n\n');
+}
+function dlRIS(papers, name){
+  name = name || 'medlit.ris';
+  var blob = new Blob([generateRIS(papers)], { type:'application/x-research-info-systems' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+}
+function exportAll(){ dlRIS(lastResults); }
+function exportOne(i){ var p=lastResults[i]; if(p) dlRIS([p],(p.titulo||'paper').substring(0,30)+'.ris'); }
+
+var cpUrl = function(p){ return p.doi ? 'https://www.connectedpapers.com/main/'+encodeURIComponent(p.doi)+'/graph' : 'https://www.connectedpapers.com/search?q='+encodeURIComponent(p.titulo||''); };
+
+// ═══════════════════════════════════════════════════
+//  RENDER SEARCH
+// ═══════════════════════════════════════════════════
+function renderResults(analysis, stats){
+  var arts = analysis.articulos || [];
+  if (!arts.length){ emptyState('search-results','🔎','Sin resultados relevantes','Intentá reformular la pregunta.'); return; }
+  document.getElementById('search-results').innerHTML =
+    '<div class="synthesis-box">'
+    + '<div class="synthesis-label">📋 Síntesis de evidencia</div>'
+    + (analysis.pregunta_reformulada ? '<div class="synthesis-pico">PICO: '+x(analysis.pregunta_reformulada)+'</div>' : '')
+    + '<div class="synthesis-text">'+x(analysis.sintesis||'')+'</div>'
+    + '</div>'
+    + '<div class="results-header">'
+    + '<div class="results-title"><strong>'+arts.length+' artículos seleccionados</strong> <span style="font-size:11px;color:var(--text-dim)">— PubMed:'+stats.pub+' SS:'+stats.ss+' Google:'+stats.gs+' → '+stats.total+' únicos</span></div>'
+    + '<button class="btn btn-green btn-sm" onclick="exportAll()">📥 Exportar a Zotero</button>'
+    + '</div>'
+    + '<div class="papers-list">'+arts.map(paperCard).join('')+'</div>';
+}
+
+function paperCard(art, i){
+  var ev   = (art.nivel_evidencia||'5').replace(/[^a-z0-9]/gi,'').toLowerCase();
+  var fMap = { pubmed:'badge-pubmed', semantic_scholar:'badge-ss', google_scholar:'badge-google', ambos:'badge-both' };
+  var lMap = { pubmed:'PubMed', semantic_scholar:'Semantic Scholar', google_scholar:'✦ Google Scholar', ambos:'⭐ Múltiples fuentes' };
+  var dots = Array.from({length:10},function(_,j){ return '<div class="rdot'+(j<(art.relevancia||5)?' on':'')+'"></div>'; }).join('');
+  var pmUrl = art.pmid ? 'https://pubmed.ncbi.nlm.nih.gov/'+art.pmid+'/' : null;
+  var ssUrl = art.ssid ? 'https://www.semanticscholar.org/paper/'+art.ssid : null;
+  return '<div class="paper-card">'
+    + '<div class="paper-badges"><span class="badge badge-ev-'+ev+'">LOE '+x(art.nivel_evidencia||'?')+'</span><span class="badge badge-type">'+x(art.tipo_estudio||'N/D')+'</span><span class="badge '+(fMap[art.fuente]||'badge-type')+'">'+(lMap[art.fuente]||art.fuente)+'</span><div class="rdots">'+dots+'</div></div>'
+    + '<div class="paper-title">'+x(art.titulo||'')+'</div>'
+    + '<div class="paper-meta"><span>'+x(art.autores||'')+'</span><span style="color:var(--border-hi)">·</span><span>'+x(art.revista||'')+' '+(art.anio||'')+'</span>'+(art.citas>0?'<span class="citas">📊 '+art.citas+'</span>':'')+'</div>'
+    + '<div class="paper-summary">'+x(art.resumen_esp||'')+'</div>'
+    + (art.aporte_principal?'<div class="paper-aporte">→ '+x(art.aporte_principal)+'</div>':'')
+    + (art.limitaciones?'<div class="paper-limitacion">⚠ '+x(art.limitaciones)+'</div>':'')
+    + '<div class="paper-actions">'
+    + (pmUrl?'<a class="btn btn-ghost btn-sm" href="'+pmUrl+'" target="_blank">🔗 PubMed</a>':'')
+    + (ssUrl?'<a class="btn btn-ghost btn-sm" href="'+ssUrl+'" target="_blank">🔗 SS</a>':'')
+    + (art.doi?'<a class="btn btn-ghost btn-sm" href="https://doi.org/'+art.doi+'" target="_blank">🔗 DOI</a>':'')
+    + '<a class="btn btn-ghost btn-sm" href="'+cpUrl(art)+'" target="_blank">🌐 Connected Papers</a>'
+    + (art.oa?'<a class="btn btn-ghost btn-sm" href="'+art.oa+'" target="_blank">📄 PDF</a>':'')
+    + '<button class="btn btn-ghost btn-sm" onclick="exportOne('+i+')" style="margin-left:auto">📥 Zotero</button>'
+    + '</div></div>';
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER CRITIC
+// ═══════════════════════════════════════════════════
+function renderCritic(a){
+  var db=a.datos_basicos||{}, pi=(a.pregunta_investigacion&&a.pregunta_investigacion.pico)||{};
+  var mt=a.metodologia||{}, rs=a.resultados||{}, vr=a.veredicto||{}, ap=a.aplicabilidad||{};
+  var evc = 'badge-ev-'+((db.nivel_evidencia_oxford||'5').replace(/[^a-z0-9]/gi,'').toLowerCase());
+  var vc  = (vr.calidad_global||'baja').toLowerCase();
+  var sh  = (a.sesgos||[]).map(function(b){
+    return '<div class="bias-item"><div><div class="bias-tipo">'+x(b.tipo)+'</div><div class="bias-desc">'+x(b.descripcion)+'</div></div><div class="bimpact '+((b.impacto||'').toLowerCase())+'">'+x(b.impacto)+'</div></div>';
+  }).join('');
+  var cpLink = db.doi ? '<a class="btn btn-ghost btn-sm" href="https://www.connectedpapers.com/main/'+encodeURIComponent(db.doi)+'/graph" target="_blank">🌐 Connected Papers</a>' : '';
+
+  document.getElementById('critic-results').innerHTML = '<div class="analysis-result">'
+    + '<div class="verdict-box '+vc+'">'
+    + '<div class="verdict-label">🏁 Veredicto — Calidad '+x(vr.calidad_global||'?')+'</div>'
+    + '<div class="verdict-recom">'+x(vr.recomendacion||'')+'</div>'
+    + '<div class="verdict-text">'+x(vr.resumen||'')+'</div>'
+    + '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+    + '<span class="badge '+evc+'">Oxford '+x(db.nivel_evidencia_oxford||'?')+'</span>'
+    + '<span class="badge badge-type">GRADE: '+x(db.nivel_evidencia_grade||'?')+'</span>'
+    + cpLink
+    + '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick=\'dlRIS(['+JSON.stringify({titulo:db.titulo,autores:db.autores,revista:db.revista,anio:db.anio,doi:db.doi,pmid:null})+'],"articulo.ris")\'>📥 Zotero</button>'
+    + '</div></div>'
+    + collapsible('📋 Datos básicos','<div class="igrid"><div><div class="ikey">Título</div><div class="ival">'+x(db.titulo||'')+'</div></div><div><div class="ikey">Autores</div><div class="ival">'+x(db.autores||'')+'</div></div><div><div class="ikey">Revista / Año</div><div class="ival">'+x(db.revista||'')+' '+(db.anio||'')+'</div></div><div><div class="ikey">DOI</div><div class="ival">'+(db.doi?'<a href="https://doi.org/'+db.doi+'" target="_blank" style="color:var(--accent)">'+db.doi+'</a>':'N/D')+'</div></div><div><div class="ikey">Tipo estudio</div><div class="ival">'+x(db.tipo_estudio||'')+'</div></div></div>')
+    + collapsible('🎯 PICO','<div class="igrid" style="padding-top:14px"><div><div class="ikey">Población</div><div class="ival">'+x(pi.poblacion||'')+'</div></div><div><div class="ikey">Intervención</div><div class="ival">'+x(pi.intervencion||'')+'</div></div><div><div class="ikey">Comparación</div><div class="ival">'+x(pi.comparacion||'N/A')+'</div></div><div><div class="ikey">Outcome</div><div class="ival">'+x(pi.outcome||'')+'</div></div></div>')
+    + collapsible('⚙️ Metodología','<div class="igrid" style="padding-top:14px"><div><div class="ikey">Diseño</div><div class="ival">'+x(mt.diseno||'')+'</div></div><div><div class="ikey">N muestra</div><div class="ival">'+x(mt.n_muestra||'')+'</div></div><div><div class="ikey">Seguimiento</div><div class="ival">'+x(mt.seguimiento||'')+'</div></div><div><div class="ikey">Aleatorización</div><div class="ival">'+x(mt.aleatorizacion||'N/A')+'</div></div></div><div style="margin-top:12px;padding:12px;background:var(--surface);border-radius:var(--radius)"><div class="ikey">Score metodológico</div><div style="font-size:22px;font-weight:700;color:var(--accent);margin:4px 0">'+(mt.puntuacion_metodologica||'?')+'<span style="font-size:13px;color:var(--text-muted)">/10</span></div><div style="font-size:12px;color:var(--text-muted)">'+x(mt.justificacion_puntuacion||'')+'</div></div>')
+    + collapsible('📊 Resultados','<div style="padding-top:14px;display:flex;flex-direction:column;gap:10px"><div><div class="ikey">Outcome primario</div><div class="ival" style="margin-top:4px">'+x(rs.outcome_primario||'')+'</div></div><div><div class="ikey">Sig. estadística</div><div class="ival" style="margin-top:4px">'+x(rs.significancia_estadistica||'')+'</div></div><div><div class="ikey">Sig. clínica</div><div class="ival" style="margin-top:4px">'+x(rs.significancia_clinica||'')+'</div></div>'+(rs.efecto_tamano?'<div><div class="ikey">Tamaño del efecto</div><div class="ival" style="margin-top:4px">'+x(rs.efecto_tamano)+'</div></div>':'')+'</div>')
+    + collapsible('⚠️ Sesgos ('+(a.sesgos||[]).length+')','<div class="bias-list">'+(sh||'<div style="padding-top:14px;color:var(--text-muted)">Sin sesgos mayores identificados.</div>')+'</div>')
+    + collapsible('✅ Fortalezas y limitaciones','<div style="padding-top:14px"><div class="ikey" style="margin-bottom:8px">Fortalezas</div><div class="tag-list">'+(a.fortalezas||[]).map(function(f){ return '<span class="tag" style="border-color:rgba(16,185,129,.3);color:var(--green)">'+x(f)+'</span>'; }).join('')+'</div><div class="ikey" style="margin:14px 0 8px">Limitaciones</div><div class="tag-list">'+(a.limitaciones||[]).map(function(l){ return '<span class="tag">'+x(l)+'</span>'; }).join('')+'</div></div>')
+    + collapsible('🌎 Aplicabilidad clínica','<div style="padding-top:14px;display:flex;flex-direction:column;gap:12px"><div><div class="ikey">Contexto Chile / LATAM</div><div class="ival" style="margin-top:4px">'+x(ap.contexto_chile||'')+'</div></div><div><div class="ikey">Población pediátrica</div><div class="ival" style="margin-top:4px">'+x(ap.poblacion_pediatrica||'')+'</div></div><div><div class="ikey">¿Cambia tu práctica?</div><div class="ival" style="margin-top:4px">'+x(ap.cambio_practica||'')+'</div></div></div>')
+    + '</div>';
+}
+
+// ═══════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════
+function collapsible(title, body){
+  var id = 'c' + Math.random().toString(36).slice(2);
+  return '<div class="coll" id="'+id+'"><div class="coll-h" onclick="document.getElementById(\''+id+'\').classList.toggle(\'open\')"><span class="coll-title">'+title+'</span><span class="coll-arrow">▶</span></div><div class="coll-body">'+body+'</div></div>';
+}
+var x       = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+var sleep   = function(ms){ return new Promise(function(r){ setTimeout(r,ms); }); };
+var disBtn  = function(id,s){ var b=document.getElementById(id); if(b) b.disabled=s; };
+var showErr = function(m,msg){ var e=document.getElementById(m+'-err'); if(e){ e.textContent='⚠ '+msg; e.classList.remove('hidden'); } };
+var clearErr = function(m){ var e=document.getElementById(m+'-err'); if(e) e.classList.add('hidden'); };
+var emptyState = function(id,icon,p,s){ document.getElementById(id).innerHTML='<div class="empty-state"><div class="empty-icon">'+icon+'</div><p>'+p+'</p><small>'+s+'</small></div>'; };
+var showStep = function(){ document.getElementById('stepper').classList.remove('hidden'); };
+var hideStep = function(){ document.getElementById('stepper').classList.add('hidden'); };
+function setStep(n){ for(var i=1;i<=5;i++){ var el=document.getElementById('s'+i); if(!el) continue; el.classList.remove('active','done'); if(i<n) el.classList.add('done'); else if(i===n) el.classList.add('active'); } }
+function showSkels(){ var sk=function(){ return '<div class="sk-card"><div style="display:flex;gap:8px;margin-bottom:8px"><div class="sk" style="width:60px;height:14px"></div><div class="sk" style="width:100px;height:14px"></div></div><div class="sk" style="height:18px;width:80%;margin-bottom:8px"></div><div class="sk" style="height:60px;width:100%"></div></div>'; }; document.getElementById('search-results').innerHTML='<div class="papers-list">'+sk()+sk()+sk()+'</div>'; }
+function skelCritic(){ return '<div class="analysis-result"><div class="sk-card"><div class="sk" style="height:90px;width:100%"></div></div><div class="sk-card"><div class="sk" style="height:40px;width:100%"></div></div></div>'; }
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+migrateOldKey();
+updateUI();
+if (!getKeys().length) {
+  setTimeout(openModal, 600);
+}
+document.getElementById('q').addEventListener('keydown', function(e){
+  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') runSearch();
+});
+</script>
+</body>
+</html>
