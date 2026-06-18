@@ -795,11 +795,14 @@ async function runSearch(){
   try {
     setStep(1);
     var queries;
+    var keyErr = null;
     try {
       var qbText = await gemini([{ text: P_QB + '\n\nPregunta: ' + query }]);
       queries = parseJSON(qbText);
     } catch(e) {
-      queries = { pubmed_query: query + ' pediatric surgery systematic review', ss_query: query };
+      keyErr = e.message;
+      // Fallback: use original query — PubMed handles Spanish terms adequately
+      queries = { pubmed_query: query, ss_query: query };
     }
 
     setStep(2);
@@ -813,7 +816,14 @@ async function runSearch(){
     var gsPapers = await gsSearch(query);
 
     var all = mergeAll(pubPapers, ssPapers, gsPapers);
-    if (!all.length) throw new Error('No se encontraron artículos. Intentá reformular la pregunta.');
+
+    if (!all.length) {
+      if (keyErr) {
+        openModal();
+        throw new Error('La API Key no funcionó (' + keyErr + '). Probá la key con el botón "Probar" o conseguí una nueva en aistudio.google.com');
+      }
+      throw new Error('No se encontraron artículos. Intentá la pregunta en inglés o reformulala.');
+    }
 
     setStep(5);
     var payload = all.map(function(p){
@@ -821,6 +831,16 @@ async function runSearch(){
     });
     var stats = { pub:pubPapers.length, ss:ssPapers.length, gs:gsPapers.length };
     var sumPrompt = buildSumPrompt(query, payload, stats);
+
+    if (keyErr) {
+      // Key failed but we still got papers — render them without AI synthesis
+      lastResults = all.map(function(p,i){
+        return Object.assign({}, p, { relevancia:5, tipo_estudio:'N/D', nivel_evidencia:'5', resumen_esp:p.abstract||'', aporte_principal:'', limitaciones:'' });
+      });
+      renderResults({ pregunta_reformulada: query, sintesis: '⚠ Sin síntesis — la API Key no funcionó. Los artículos son resultados directos de PubMed y Semantic Scholar.', articulos: lastResults }, Object.assign({ total:all.length }, stats));
+      hideStep();
+      return;
+    }
 
     var analysis;
     try { analysis = parseJSON(await gemini([{ text:sumPrompt }])); }
