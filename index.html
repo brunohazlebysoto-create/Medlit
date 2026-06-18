@@ -305,7 +305,10 @@ textarea::placeholder{color:var(--text-dim)}
         <button class="key-add-btn" onclick="addKey()">+ Agregar Key</button>
       </div>
     </div>
-    <p class="modal-hint">Keys en <strong>aistudio.google.com</strong> → Get API Key (es gratis)</p>
+    <p class="modal-hint">
+      Gemini: <strong>aistudio.google.com</strong> → Get API Key (gratis, empieza con <code>AIzaSy</code>)<br>
+      OpenRouter: <strong>openrouter.ai</strong> → Keys → Create Key (gratis, empieza con <code>sk-or-</code>)
+    </p>
   </div>
 </div>
 
@@ -488,34 +491,46 @@ async function testKey(id){
   k.status = 'testing'; k.errMsg = '';
   saveKeys(ks); renderKeyList();
 
-  var body = JSON.stringify({ contents:[{ parts:[{ text:'Say OK' }] }] });
-  var BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
-  async function tryFetch(url, headers){
-    return fetch(url, { method:'POST', headers: Object.assign({'Content-Type':'application/json'}, headers), body:body });
-  }
-
   try {
-    // Try ?key= param first (standard AI Studio key)
-    var res = await tryFetch(BASE + '?key=' + encodeURIComponent(k.key), {});
+    var isOR = k.key.startsWith('sk-or-');
 
-    // If that fails, try Bearer token (OAuth2 / service account token)
-    if (!res.ok) {
-      var errData = await res.json().catch(function(){ return {}; });
-      var bearerRes = await tryFetch(BASE, { 'Authorization': 'Bearer ' + k.key });
-      if (bearerRes.ok) {
-        res = bearerRes;
-        var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
-        if (k2) { k2.authMode = 'bearer'; saveKeys(ks2); }
+    if (isOR) {
+      // OpenRouter test
+      var res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+k.key, 'HTTP-Referer':'https://medlit.app', 'X-Title':'MedLit' },
+        body: JSON.stringify({ model:'google/gemini-2.0-flash-exp:free', messages:[{role:'user',content:'Say OK'}], max_tokens:5 })
+      });
+      var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+      if (res.ok) {
+        if (k2) { k2.status = 'ok'; k2.errMsg = ''; k2.provider = 'openrouter'; saveKeys(ks2); }
       } else {
-        var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+        var errData = await res.json().catch(function(){ return {}; });
         if (k2) { k2.status = 'error'; k2.errMsg = (errData.error&&errData.error.message)||('HTTP '+res.status); saveKeys(ks2); }
-        renderKeyList(); updateUI(); return;
       }
+    } else {
+      // Gemini test — try ?key= then Bearer
+      var body = JSON.stringify({ contents:[{ parts:[{ text:'Say OK' }] }] });
+      var BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+      var res = await fetch(BASE + '?key=' + encodeURIComponent(k.key), {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:body
+      });
+      if (!res.ok) {
+        var errData = await res.json().catch(function(){ return {}; });
+        var bearerRes = await fetch(BASE, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+k.key}, body:body });
+        if (bearerRes.ok) {
+          res = bearerRes;
+          var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+          if (k2) { k2.authMode = 'bearer'; saveKeys(ks2); }
+        } else {
+          var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+          if (k2) { k2.status = 'error'; k2.errMsg = (errData.error&&errData.error.message)||('HTTP '+res.status); saveKeys(ks2); }
+          renderKeyList(); updateUI(); return;
+        }
+      }
+      var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+      if (k2) { k2.status = 'ok'; k2.errMsg = ''; k2.provider = 'gemini'; saveKeys(ks2); }
     }
-
-    var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
-    if (k2) { k2.status = 'ok'; k2.errMsg = ''; saveKeys(ks2); }
   } catch(e) {
     var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
     if (k2) { k2.status = 'error'; k2.errMsg = e.message; saveKeys(ks2); }
@@ -538,7 +553,9 @@ function renderKeyList(){
     var isAct = i === active;
     var sClass = k.status === 'ok' ? 'ok' : k.status === 'error' ? 'error' : k.status === 'testing' ? 'testing' : '';
     var masked = k.key.substring(0,6) + '••••••' + k.key.slice(-3);
-    var modeTag = k.authMode === 'bearer' ? ' <span style="font-size:9px;color:#8b5cf6;background:rgba(139,92,246,.12);padding:1px 5px;border-radius:3px">OAuth</span>' : '';
+    var providerTag = k.key.startsWith('sk-or-')
+      ? ' <span style="font-size:9px;color:#f59e0b;background:rgba(245,158,11,.12);padding:1px 5px;border-radius:3px">OpenRouter</span>'
+      : k.authMode === 'bearer' ? ' <span style="font-size:9px;color:#8b5cf6;background:rgba(139,92,246,.12);padding:1px 5px;border-radius:3px">OAuth</span>' : '';
     var testTxt = k.status === 'testing' ? '…' : k.status === 'ok' ? '✓ OK' : k.status === 'error' ? '✗ Falla' : 'Probar';
     var testStyle = k.status === 'ok'
       ? 'background:rgba(16,185,129,.15);color:#10b981;border-color:rgba(16,185,129,.4)'
@@ -549,7 +566,7 @@ function renderKeyList(){
     return '<div class="key-row' + (isAct ? ' active-row' : '') + '" onclick="activateKey(' + k.id + ')">'
       + '<div class="kstat ' + sClass + '"></div>'
       + '<div class="key-info">'
-      + '<div class="key-name">' + x(k.label) + modeTag + (isAct ? '<span class="key-active-badge">activa</span>' : '') + '</div>'
+      + '<div class="key-name">' + x(k.label) + providerTag + (isAct ? '<span class="key-active-badge">activa</span>' : '') + '</div>'
       + '<div class="key-masked">' + masked + '</div>'
       + errLine
       + '</div>'
@@ -634,6 +651,41 @@ function setCriticMode(m){
 }
 
 // ═══════════════════════════════════════════════════
+//  OPENROUTER
+// ═══════════════════════════════════════════════════
+var OR_MODELS = {
+  'gemini-2.0-flash-lite':        'google/gemini-2.0-flash-exp:free',
+  'gemini-2.0-flash':             'google/gemini-2.0-flash-exp:free',
+  'gemini-1.5-pro':               'meta-llama/llama-3.3-70b-instruct:free',
+  'gemini-2.5-pro-preview-06-05': 'deepseek/deepseek-r1:free',
+};
+
+async function callOpenRouter(key, parts, model){
+  var textContent = parts.filter(function(p){ return p.text; }).map(function(p){ return p.text; }).join('');
+  if (parts.some(function(p){ return p.inline_data; }))
+    throw new Error('El análisis de PDF requiere una API Key de Gemini (no OpenRouter).');
+  var orModel = OR_MODELS[model] || 'google/gemini-2.0-flash-exp:free';
+  var res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+key, 'HTTP-Referer':'https://medlit.app', 'X-Title':'MedLit' },
+    body: JSON.stringify({ model:orModel, messages:[{role:'user',content:textContent}], temperature:0.1 })
+  });
+  if (res.status === 429){
+    var next = rotateKey();
+    if (next && next !== key && next.startsWith('sk-or-')){
+      await sleep(1000);
+      return callOpenRouter(next, parts, model);
+    }
+  }
+  if (!res.ok){
+    var err = await res.json().catch(function(){ return {}; });
+    throw new Error((err.error&&err.error.message)||('OpenRouter error '+res.status));
+  }
+  var data = await res.json();
+  return (data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'';
+}
+
+// ═══════════════════════════════════════════════════
 //  GEMINI API
 // ═══════════════════════════════════════════════════
 var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
@@ -659,7 +711,6 @@ async function geminiCall(key, model, body){
   var res = await fetch(geminiUrl(key, model, bearer), {
     method:'POST', headers: geminiHeaders(key, bearer), body:JSON.stringify(body)
   });
-  // Auto-retry with other auth mode if first attempt fails with auth error
   if ((res.status === 400 || res.status === 401 || res.status === 403) && !bearer) {
     var alt = await fetch(geminiUrl(key, model, true), {
       method:'POST', headers: geminiHeaders(key, true), body:JSON.stringify(body)
@@ -673,6 +724,12 @@ async function gemini(parts, useSearch){
   var key = getKey();
   if (!key) throw new Error('Configurá una API Key primero (botón ✦ Keys).');
   var model = getModel();
+
+  // Dispatch to OpenRouter for sk-or-... keys
+  if (key.startsWith('sk-or-')) {
+    return await callOpenRouter(key, parts, model);
+  }
+
   var body = { contents:[{ parts:parts }], generationConfig:{ temperature:0.1 } };
   if (useSearch) body.tools = [{ google_search:{} }];
 
@@ -682,7 +739,9 @@ async function gemini(parts, useSearch){
     var next = rotateKey();
     if (next && next !== key) {
       await sleep(800);
-      res = await geminiCall(next, model, body);
+      res = next.startsWith('sk-or-')
+        ? await fetch('https://openrouter.ai/api/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+next,'HTTP-Referer':'https://medlit.app','X-Title':'MedLit'}, body:JSON.stringify({model:OR_MODELS[model]||'google/gemini-2.0-flash-exp:free',messages:[{role:'user',content:parts.map(function(p){return p.text||'';}).join('')}],temperature:0.1}) })
+        : await geminiCall(next, model, body);
     }
   }
 
