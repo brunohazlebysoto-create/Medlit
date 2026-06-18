@@ -485,26 +485,42 @@ async function testKey(id){
   var k  = ks.find(function(k){ return k.id === id; });
   if (!k) return;
 
-  k.status = 'testing';
-  saveKeys(ks);
-  renderKeyList();
+  k.status = 'testing'; k.errMsg = '';
+  saveKeys(ks); renderKeyList();
+
+  var body = JSON.stringify({ contents:[{ parts:[{ text:'Say OK' }] }] });
+  var BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+  async function tryFetch(url, headers){
+    return fetch(url, { method:'POST', headers: Object.assign({'Content-Type':'application/json'}, headers), body:body });
+  }
 
   try {
-    var res = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + k.key,
-      { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ contents:[{ parts:[{ text:'Say OK' }] }] }) }
-    );
-    var ks2 = getKeys();
-    var k2  = ks2.find(function(k){ return k.id === id; });
-    if (k2) { k2.status = res.ok ? 'ok' : 'error'; saveKeys(ks2); }
+    // Try ?key= param first (standard AI Studio key)
+    var res = await tryFetch(BASE + '?key=' + encodeURIComponent(k.key), {});
+
+    // If that fails, try Bearer token (OAuth2 / service account token)
+    if (!res.ok) {
+      var errData = await res.json().catch(function(){ return {}; });
+      var bearerRes = await tryFetch(BASE, { 'Authorization': 'Bearer ' + k.key });
+      if (bearerRes.ok) {
+        res = bearerRes;
+        var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+        if (k2) { k2.authMode = 'bearer'; saveKeys(ks2); }
+      } else {
+        var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+        if (k2) { k2.status = 'error'; k2.errMsg = (errData.error&&errData.error.message)||('HTTP '+res.status); saveKeys(ks2); }
+        renderKeyList(); updateUI(); return;
+      }
+    }
+
+    var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+    if (k2) { k2.status = 'ok'; k2.errMsg = ''; saveKeys(ks2); }
   } catch(e) {
-    var ks2 = getKeys();
-    var k2  = ks2.find(function(k){ return k.id === id; });
-    if (k2) { k2.status = 'error'; saveKeys(ks2); }
+    var ks2 = getKeys(); var k2 = ks2.find(function(k){ return k.id===id; });
+    if (k2) { k2.status = 'error'; k2.errMsg = e.message; saveKeys(ks2); }
   }
-  renderKeyList();
-  updateUI();
+  renderKeyList(); updateUI();
 }
 
 function renderKeyList(){
@@ -522,17 +538,20 @@ function renderKeyList(){
     var isAct = i === active;
     var sClass = k.status === 'ok' ? 'ok' : k.status === 'error' ? 'error' : k.status === 'testing' ? 'testing' : '';
     var masked = k.key.substring(0,6) + '••••••' + k.key.slice(-3);
+    var modeTag = k.authMode === 'bearer' ? ' <span style="font-size:9px;color:#8b5cf6;background:rgba(139,92,246,.12);padding:1px 5px;border-radius:3px">OAuth</span>' : '';
     var testTxt = k.status === 'testing' ? '…' : k.status === 'ok' ? '✓ OK' : k.status === 'error' ? '✗ Falla' : 'Probar';
     var testStyle = k.status === 'ok'
       ? 'background:rgba(16,185,129,.15);color:#10b981;border-color:rgba(16,185,129,.4)'
       : k.status === 'error'
       ? 'background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.4)'
       : '';
+    var errLine = (k.status === 'error' && k.errMsg) ? '<div style="font-size:10px;color:#ef4444;margin-top:2px;word-break:break-all">' + x(k.errMsg) + '</div>' : '';
     return '<div class="key-row' + (isAct ? ' active-row' : '') + '" onclick="activateKey(' + k.id + ')">'
       + '<div class="kstat ' + sClass + '"></div>'
       + '<div class="key-info">'
-      + '<div class="key-name">' + x(k.label) + (isAct ? '<span class="key-active-badge">activa</span>' : '') + '</div>'
+      + '<div class="key-name">' + x(k.label) + modeTag + (isAct ? '<span class="key-active-badge">activa</span>' : '') + '</div>'
       + '<div class="key-masked">' + masked + '</div>'
+      + errLine
       + '</div>'
       + '<div class="key-actions">'
       + '<button class="btn btn-ghost btn-sm" style="' + testStyle + '" onclick="event.stopPropagation();testKey(' + k.id + ')" ' + (k.status==='testing'?'disabled':'') + '>' + testTxt + '</button>'
@@ -617,9 +636,38 @@ function setCriticMode(m){
 // ═══════════════════════════════════════════════════
 //  GEMINI API
 // ═══════════════════════════════════════════════════
-var GEMINI_URL = function(key, model){
-  return 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
-};
+var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+
+function geminiHeaders(key, useBearer){
+  var h = {'Content-Type':'application/json'};
+  if (useBearer) h['Authorization'] = 'Bearer ' + key;
+  return h;
+}
+function geminiUrl(key, model, useBearer){
+  var base = GEMINI_BASE + model + ':generateContent';
+  return useBearer ? base : base + '?key=' + encodeURIComponent(key);
+}
+
+function keyIsBearer(key){
+  var ks = getKeys();
+  var k  = ks.find(function(k){ return k.key === key; });
+  return k && k.authMode === 'bearer';
+}
+
+async function geminiCall(key, model, body){
+  var bearer = keyIsBearer(key);
+  var res = await fetch(geminiUrl(key, model, bearer), {
+    method:'POST', headers: geminiHeaders(key, bearer), body:JSON.stringify(body)
+  });
+  // Auto-retry with other auth mode if first attempt fails with auth error
+  if ((res.status === 400 || res.status === 401 || res.status === 403) && !bearer) {
+    var alt = await fetch(geminiUrl(key, model, true), {
+      method:'POST', headers: geminiHeaders(key, true), body:JSON.stringify(body)
+    });
+    if (alt.ok) return alt;
+  }
+  return res;
+}
 
 async function gemini(parts, useSearch){
   var key = getKey();
@@ -628,17 +676,13 @@ async function gemini(parts, useSearch){
   var body = { contents:[{ parts:parts }], generationConfig:{ temperature:0.1 } };
   if (useSearch) body.tools = [{ google_search:{} }];
 
-  var res = await fetch(GEMINI_URL(key, model), {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
-  });
+  var res = await geminiCall(key, model, body);
 
   if (res.status === 429) {
     var next = rotateKey();
     if (next && next !== key) {
       await sleep(800);
-      res = await fetch(GEMINI_URL(next, model), {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
-      });
+      res = await geminiCall(next, model, body);
     }
   }
 
