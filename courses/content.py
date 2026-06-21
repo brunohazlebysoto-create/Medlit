@@ -23,7 +23,7 @@ LESSONS = [
 <p>El ciclo fundamental es: <code>Observar → Pensar → Actuar → repetir</code></p>
 """,
         "diagram_type": "react",
-        "starter_code": """class SimpleAgent:
+        "starter_code": '''class SimpleAgent:
     def __init__(self, nombre):
         self.nombre = nombre
         self.memoria = []
@@ -52,8 +52,8 @@ LESSONS = [
 
 agente = SimpleAgent("investigador")
 # Tu código aquí...
-""",
-        "solution_code": """class SimpleAgent:
+''',
+        "solution_code": '''class SimpleAgent:
     def __init__(self, nombre):
         self.nombre = nombre
         self.memoria = []
@@ -82,7 +82,7 @@ agente.actuar("buscar_papers(query='AI agents')")
 print(f"\nMemoria total: {len(agente.memoria)} items")
 for item in agente.memoria:
     print(f"  [{item['rol'].upper()}] {item['contenido']}")
-""",
+''',
         "expected_output_contains": ["Observo", "Pienso", "Acto", "Memoria total"],
         "requires_api_key": False,
     },
@@ -103,7 +103,7 @@ for item in agente.memoria:
 <p>Este ciclo se repite hasta que el agente responde con <code>Respuesta Final:</code>. Es la base de LangChain, AutoGen, CrewAI y Claude's tool use.</p>
 """,
         "diagram_type": "react",
-        "starter_code": """HERRAMIENTAS = {
+        "starter_code": '''HERRAMIENTAS = {
     "calculadora": lambda expr: str(eval(expr)),
     "buscar": lambda q: f"Resultado para '{q}': encontrados 42 papers relevantes sobre {q}",
     "contar_palabras": lambda texto: str(len(texto.split())),
@@ -141,8 +141,8 @@ def react_agent(pregunta, herramientas, max_pasos=5):
 
 resultado = react_agent("Busca papers sobre sistemas multi-agente", HERRAMIENTAS)
 print(f"\nResultado final: {resultado}")
-""",
-        "solution_code": """HERRAMIENTAS = {
+''',
+        "solution_code": '''HERRAMIENTAS = {
     "calculadora": lambda expr: str(eval(expr)),
     "buscar": lambda q: f"Resultado para '{q}': encontrados 42 papers relevantes sobre {q}",
     "contar_palabras": lambda texto: str(len(texto.split())),
@@ -187,7 +187,7 @@ def react_agent(pregunta, herramientas, max_pasos=5):
 
 resultado = react_agent("Busca papers sobre sistemas multi-agente", HERRAMIENTAS)
 print(f"\nResultado final: {resultado}")
-""",
+''',
         "expected_output_contains": ["Pregunta", "Pensamiento", "Acción", "Observación", "Respuesta Final"],
         "requires_api_key": False,
     },
@@ -209,7 +209,7 @@ print(f"\nResultado final: {resultado}")
 <p>Este es exactamente el formato que usa la API de Anthropic (Claude).</p>
 """,
         "diagram_type": "none",
-        "starter_code": """# Herramienta 1 ya definida:
+        "starter_code": '''# Herramienta 1 ya definida:
 herramientas = [
     {
         "name": "buscar_papers",
@@ -253,8 +253,8 @@ print(dispatch_tool("buscar_papers", {"query": "multi-agent systems"}))
 print(dispatch_tool("resumir_paper", {"doi": "10.1000/abc123"}))
 print(dispatch_tool("guardar_nota", {"titulo": "Nota 1", "contenido": "Contenido...", "etiquetas": ["IA", "agentes"]}))
 print(dispatch_tool("herramienta_inexistente", {}))
-""",
-        "solution_code": """herramientas = [
+''',
+        "solution_code": '''herramientas = [
     {
         "name": "buscar_papers",
         "description": "Busca artículos académicos en PubMed y Semantic Scholar",
@@ -320,7 +320,7 @@ print(dispatch_tool("buscar_papers", {"query": "multi-agent systems"}))
 print(dispatch_tool("resumir_paper", {"doi": "10.1000/abc123"}))
 print(dispatch_tool("guardar_nota", {"titulo": "Nota 1", "contenido": "Contenido...", "etiquetas": ["IA", "agentes"]}))
 print(dispatch_tool("herramienta_inexistente", {}))
-""",
+''',
         "expected_output_contains": ["Paper sobre", "Resumen", "Nota guardada", "desconocida"],
         "requires_api_key": False,
     },
@@ -346,7 +346,7 @@ print(dispatch_tool("herramienta_inexistente", {}))
 <p>En este ejercicio el código funciona en <strong>modo demo</strong> sin API key real.</p>
 """,
         "diagram_type": "none",
-        "starter_code": """# Simulamos la API de Anthropic en modo demo (sin API key real)
+        "starter_code": '''# Simulamos la API de Anthropic en modo demo (sin API key real)
 class AnthropicDemo:
     """Cliente demo que simula respuestas de Claude."""
     def __init__(self, api_key="demo"):
@@ -383,8 +383,8 @@ print(f"Claude dice: {respuesta}")
 print("\nEstructura de un mensaje de la API:")
 print('{"role": "user", "content": "Tu pregunta aquí"}')
 print('{"role": "assistant", "content": "Respuesta de Claude"}')
-""",
-        "solution_code": """class AnthropicDemo:
+''',
+        "solution_code": '''class AnthropicDemo:
     def __init__(self, api_key="demo"):
         self.api_key = api_key
         self.messages = type('obj', (object,), {'create': self._create})()
@@ -417,7 +417,7 @@ print(f"Claude dice: {respuesta}")
 print("\nEstructura de un mensaje de la API:")
 print('{"role": "user", "content": "Tu pregunta aquí"}')
 print('{"role": "assistant", "content": "Respuesta de Claude"}')
-""",
+''',
         "expected_output_contains": ["Claude dice", "Estructura", "role"],
         "requires_api_key": False,
     },
@@ -439,7 +439,7 @@ print('{"role": "assistant", "content": "Respuesta de Claude"}')
 <p>La clave es mantener la <strong>alternancia de roles</strong>: siempre <code>user → assistant → user → ...</code></p>
 """,
         "diagram_type": "none",
-        "starter_code": """# Cliente demo
+        "starter_code": '''# Cliente demo
 class DemoClient:
     def __init__(self):
         self.messages = type('obj', (object,), {'create': self._create})()
@@ -488,8 +488,8 @@ def ejecutar_bucle_agente(mensaje_inicial, sistema="Eres un investigador cientí
 
 resultado = ejecutar_bucle_agente("Investiga sobre sistemas multi-agente de IA")
 print(f"\nResultado final: {resultado}")
-""",
-        "solution_code": """class DemoClient:
+''',
+        "solution_code": '''class DemoClient:
     def __init__(self):
         self.messages = type('obj', (object,), {'create': self._create})()
         self._llamadas = 0
@@ -533,7 +533,7 @@ def ejecutar_bucle_agente(mensaje_inicial, sistema="Eres un investigador cientí
 
 resultado = ejecutar_bucle_agente("Investiga sobre sistemas multi-agente de IA")
 print(f"\nResultado final: {resultado}")
-""",
+''',
         "expected_output_contains": ["Iteración", "Claude:", "Resultado final"],
         "requires_api_key": False,
     },
@@ -554,7 +554,7 @@ print(f"\nResultado final: {resultado}")
 <p>El agente debe ejecutar la herramienta y retornar un bloque <code>tool_result</code> con el mismo <code>tool_use_id</code>. La conversación continúa hasta <code>end_turn</code>.</p>
 """,
         "diagram_type": "none",
-        "starter_code": """import json
+        "starter_code": '''import json
 
 # Herramientas disponibles
 def buscar_papers(query, max_resultados=5):
@@ -649,8 +649,8 @@ def agente_con_herramientas(pregunta):
 
 
 agente_con_herramientas("Investiga papers sobre multi-agent AI y resume el mejor")
-""",
-        "solution_code": """import json
+''',
+        "solution_code": '''import json
 
 def buscar_papers(query, max_resultados=5):
     return [{"titulo": f"{query} - Paper #{i+1}", "citas": (i+1)*10} for i in range(max_resultados)]
@@ -739,7 +739,7 @@ def agente_con_herramientas(pregunta):
 
 
 agente_con_herramientas("Investiga papers sobre multi-agent AI y resume el mejor")
-""",
+''',
         "expected_output_contains": ["usa herramienta", "buscar_papers", "Resultado", "Claude (final)"],
         "requires_api_key": False,
     },
@@ -765,7 +765,7 @@ agente_con_herramientas("Investiga papers sobre multi-agent AI y resume el mejor
 <p>Ventajas: cada agente tiene contexto enfocado, se pueden paralelizar tareas, y el sistema escala mejor que un solo agente monolítico.</p>
 """,
         "diagram_type": "orchestrator",
-        "starter_code": """class Orquestador:
+        "starter_code": '''class Orquestador:
     def __init__(self):
         self.agentes = {}
         self.resultados = {}
@@ -812,8 +812,8 @@ orquestador.registrar("analizador", AgenteAnalizador())
 orquestador.registrar("reportero", AgenteReportero())
 
 orquestador.ejecutar_pipeline("sistemas multi-agente")
-""",
-        "solution_code": """class Orquestador:
+''',
+        "solution_code": '''class Orquestador:
     def __init__(self):
         self.agentes = {}
         self.resultados = {}
@@ -862,7 +862,7 @@ orquestador.registrar("reportero", AgenteReportero())
 
 resultado_final = orquestador.ejecutar_pipeline("sistemas multi-agente")
 print(f"\nPipeline completado. Resultado: {resultado_final}")
-""",
+''',
         "expected_output_contains": ["Agente registrado", "Despachando", "Pipeline completado"],
         "requires_api_key": False,
     },
@@ -883,7 +883,7 @@ print(f"\nPipeline completado. Resultado: {resultado_final}")
 <p>Este patrón se usa en Bruno, CrewAI (<code>Agent</code> class) y LangGraph (<code>StateGraph</code> nodes).</p>
 """,
         "diagram_type": "orchestrator",
-        "starter_code": """from abc import ABC, abstractmethod
+        "starter_code": '''from abc import ABC, abstractmethod
 import time
 
 
@@ -930,8 +930,8 @@ resultados = buscador.ejecutar("sistemas multi-agente con LLMs")
 print(f"\nBuscador retornó: {resultados['total']} papers")
 
 # TODO: instancia AgenteSummarizer y resume los papers del buscador
-""",
-        "solution_code": """from abc import ABC, abstractmethod
+''',
+        "solution_code": '''from abc import ABC, abstractmethod
 import time
 
 
@@ -987,7 +987,7 @@ resumenes = resumidor.ejecutar(resultados)
 print(f"\nResumidor generó: {resumenes['total']} resúmenes")
 for r in resumenes["resumenes"]:
     print(f"  - {r[:70]}...")
-""",
+''',
         "expected_output_contains": ["Buscando", "Encontrados", "Resumiendo", "resúmenes"],
         "requires_api_key": False,
     },
@@ -1008,7 +1008,7 @@ for r in resumenes["resumenes"]:
 <p>El sistema Bruno usa exactamente esto: <code>queue.Queue</code> entre los agentes y el endpoint SSE de FastAPI.</p>
 """,
         "diagram_type": "orchestrator",
-        "starter_code": """import queue
+        "starter_code": '''import queue
 import threading
 
 
@@ -1073,8 +1073,8 @@ analista.escuchar(3)
 
 print("\nReportero leyendo mensajes:")
 reportero.escuchar(1)
-""",
-        "solution_code": """import queue
+''',
+        "solution_code": '''import queue
 import threading
 
 
@@ -1132,7 +1132,7 @@ analista.escuchar(3)
 
 print("\nReportero leyendo mensajes:")
 reportero.escuchar(1)
-""",
+''',
         "expected_output_contains": ["suscrito", "Recibió", "broadcast", "Pipeline iniciado"],
         "requires_api_key": False,
     },
@@ -1156,7 +1156,7 @@ reportero.escuchar(1)
 <p><code>ThreadPoolExecutor</code> del módulo <code>concurrent.futures</code> es la forma más simple de paralelizar en Python. Bruno lo usa con <code>max_workers=4</code>.</p>
 """,
         "diagram_type": "parallel",
-        "starter_code": """import time
+        "starter_code": '''import time
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -1209,8 +1209,8 @@ def busqueda_paralela(query):
 # Compara paralelo vs secuencial
 resultados = busqueda_paralela("sistemas multi-agente")
 print(f"\n(Búsqueda secuencial habría tardado ~{sum(BASES_DE_DATOS.values()):.2f}s)")
-""",
-        "solution_code": """import time
+''',
+        "solution_code": '''import time
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -1260,7 +1260,7 @@ def busqueda_paralela(query):
 
 resultados = busqueda_paralela("sistemas multi-agente")
 print(f"\n(Búsqueda secuencial habría tardado ~{sum(BASES_DE_DATOS.values()):.2f}s)")
-""",
+''',
         "expected_output_contains": ["paralelo", "pubmed", "semantic_scholar", "deduplicar"],
         "requires_api_key": False,
     },
@@ -1281,7 +1281,7 @@ print(f"\n(Búsqueda secuencial habría tardado ~{sum(BASES_DE_DATOS.values()):.
 <p>Clave: nunca sobrescribas datos anteriores, solo agrega nuevas claves al dict de contexto.</p>
 """,
         "diagram_type": "pipeline",
-        "starter_code": """# Pipeline de 3 etapas con contexto acumulativo
+        "starter_code": '''# Pipeline de 3 etapas con contexto acumulativo
 
 def etapa_busqueda(tema):
     """Etapa 1: Búsqueda de papers"""
@@ -1297,7 +1297,7 @@ def etapa_busqueda(tema):
 
 
 def etapa_analisis(contexto):
-    """Etapa 2: Análisis de cada paper — AGREGA al contexto, no reemplaza."""
+    """Etapa 2: Análisis de cada paper - AGREGA al contexto, no reemplaza."""
     print(f"\n[Etapa 2] Analizando {len(contexto['papers'])} papers...")
 
     # TODO: itera sobre contexto['papers'] y agrega a cada paper un campo 'analisis'
@@ -1308,7 +1308,7 @@ def etapa_analisis(contexto):
 
 
 def etapa_sintesis(contexto):
-    """Etapa 3: Síntesis global — AGREGA al contexto, no reemplaza."""
+    """Etapa 3: Síntesis global - AGREGA al contexto, no reemplaza."""
     print(f"\n[Etapa 3] Sintetizando evidencia...")
 
     # TODO: calcula nivel_evidencia_global (el nivel más alto encontrado entre los papers)
@@ -1328,8 +1328,8 @@ print("\n--- Contexto Final ---")
 print(f"Tema: {resultado['tema']}")
 print(f"Papers: {len(resultado['papers'])}")
 print(f"Meta: {resultado.get('meta', 'No generado')}")
-""",
-        "solution_code": """def etapa_busqueda(tema):
+''',
+        "solution_code": '''def etapa_busqueda(tema):
     print(f"\n[Etapa 1] Buscando papers sobre: {tema}")
     papers = [
         {"titulo": f"{tema} - RCT multicenter", "tipo": "RCT", "ano": 2023, "n_pacientes": 500},
@@ -1378,7 +1378,7 @@ print("\n--- Contexto Final ---")
 print(f"Tema: {resultado['tema']}")
 print(f"Papers: {len(resultado['papers'])}")
 print(f"Meta: {resultado.get('meta')}")
-""",
+''',
         "expected_output_contains": ["Etapa 1", "Etapa 2", "Etapa 3", "Contexto Final", "nivel_global"],
         "requires_api_key": False,
     },
@@ -1400,7 +1400,7 @@ print(f"Meta: {resultado.get('meta')}")
 <p>Usado en Constitutional AI (Anthropic), AutoGen's GroupChat y sistemas de revisión de papers.</p>
 """,
         "diagram_type": "none",
-        "starter_code": """import random
+        "starter_code": '''import random
 
 
 class AgenteGenerador:
@@ -1457,8 +1457,8 @@ def bucle_critico(tarea, puntaje_minimo=4, max_rondas=4):
 
 
 bucle_critico("revisión sistemática de cirugía laparoscópica en niños")
-""",
-        "solution_code": """import random
+''',
+        "solution_code": '''import random
 
 
 class AgenteGenerador:
@@ -1512,13 +1512,13 @@ def bucle_critico(tarea, puntaje_minimo=4, max_rondas=4):
 
 
 bucle_critico("revisión sistemática de cirugía laparoscópica en niños")
-""",
+''',
         "expected_output_contains": ["Ronda", "Evaluador", "Puntuación", "Calidad alcanzada"],
         "requires_api_key": False,
     },
 
     # ─────────────────────────────────────────────────────────────────────────
-    # MÓDULO 5: PROYECTO FINAL — REPLICA EL SISTEMA BRUNO
+    # MÓDULO 5: PROYECTO FINAL - REPLICA EL SISTEMA BRUNO
     # ─────────────────────────────────────────────────────────────────────────
     {
         "id": "m5s1",
@@ -1539,7 +1539,7 @@ bucle_critico("revisión sistemática de cirugía laparoscópica en niños")
 <p>La clave es definir las <strong>dependencias explícitas</strong>: qué agente necesita el output de cuál otro.</p>
 """,
         "diagram_type": "full_system",
-        "starter_code": """from dataclasses import dataclass, field
+        "starter_code": '''from dataclasses import dataclass, field
 from typing import List, Optional
 
 
@@ -1586,8 +1586,8 @@ def validar_pipeline(config):
 
 
 validar_pipeline(PIPELINE_CONFIG)
-""",
-        "solution_code": """from dataclasses import dataclass, field
+''',
+        "solution_code": '''from dataclasses import dataclass, field
 from typing import List, Optional
 
 
@@ -1644,7 +1644,7 @@ def validar_pipeline(config):
 
 
 validar_pipeline(PIPELINE_CONFIG)
-""",
+''',
         "expected_output_contains": ["Pipeline válido", "Buscador", "Analizador", "Meta-Analista", "Presentador"],
         "requires_api_key": False,
     },
@@ -1666,7 +1666,7 @@ validar_pipeline(PIPELINE_CONFIG)
 <p>Este patrón permite que el usuario vea cada paso del pipeline mientras ocurre.</p>
 """,
         "diagram_type": "pipeline",
-        "starter_code": """import asyncio
+        "starter_code": '''import asyncio
 import json
 import queue
 import uuid
@@ -1731,8 +1731,8 @@ servidor = FakeSSEServer()
 sid = servidor.iniciar_pipeline("cirugía laparoscópica pediátrica", max_papers=5)
 import time; time.sleep(0.1)  # espera que el hilo inicie
 servidor.leer_eventos(sid)
-""",
-        "solution_code": """import asyncio
+''',
+        "solution_code": '''import asyncio
 import json
 import queue
 import uuid
@@ -1800,7 +1800,7 @@ servidor = FakeSSEServer()
 sid = servidor.iniciar_pipeline("cirugía laparoscópica pediátrica", max_papers=5)
 time.sleep(0.1)
 servidor.leer_eventos(sid)
-""",
+''',
         "expected_output_contains": ["agent_start", "Buscador", "agent_complete", "pipeline_complete"],
         "requires_api_key": False,
     },
@@ -1821,7 +1821,7 @@ servidor.leer_eventos(sid)
 <p>Para despliegue: Railway y Render tienen tier gratuito compatible con FastAPI. Solo necesitas un <code>Procfile</code> o configuración de comando de inicio.</p>
 """,
         "diagram_type": "none",
-        "starter_code": """import unittest
+        "starter_code": '''import unittest
 from unittest.mock import patch, MagicMock
 
 
@@ -1883,8 +1883,8 @@ if __name__ == "__main__":
     runner = unittest.TextTestRunner(verbosity=2)
     resultado = runner.run(suite)
     print(f"\nTests pasados: {resultado.testsRun - len(resultado.failures) - len(resultado.errors)}/{resultado.testsRun}")
-""",
-        "solution_code": """import unittest
+''',
+        "solution_code": '''import unittest
 from unittest.mock import patch, MagicMock
 
 
@@ -1954,7 +1954,7 @@ if __name__ == "__main__":
     runner = unittest.TextTestRunner(verbosity=2)
     resultado = runner.run(suite)
     print(f"\nTests pasados: {resultado.testsRun - len(resultado.failures) - len(resultado.errors)}/{resultado.testsRun}")
-""",
+''',
         "expected_output_contains": ["Test 1 PASADO", "Test 2 PASADO", "Test 3 PASADO", "Tests pasados"],
         "requires_api_key": False,
     },
