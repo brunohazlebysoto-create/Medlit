@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aprende Multi-Agentes — Curso Interactivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "codemirror": "https://esm.sh/codemirror@6.0.1",
+    "@codemirror/lang-python": "https://esm.sh/@codemirror/lang-python@6.1.4",
+    "@codemirror/theme-one-dark": "https://esm.sh/@codemirror/theme-one-dark@6.1.2",
+    "@codemirror/view": "https://esm.sh/@codemirror/view@6.35.3",
+    "@codemirror/state": "https://esm.sh/@codemirror/state@6.4.1",
+    "@codemirror/commands": "https://esm.sh/@codemirror/commands@6.7.1",
+    "@codemirror/language": "https://esm.sh/@codemirror/language@6.10.3"
+  }
+}
+</script>
+<style>
+:root{
+  --bg:#080c14;--surface:#0f1520;--card:#141c2e;--card-hover:#182236;
+  --border:#1e2d45;--border-hi:#2a3f5f;--text:#e2eaf6;--text-muted:#6b82a8;
+  --text-dim:#3d5278;--accent:#4285f4;--accent-lo:#1a2e5e;
+  --green:#10b981;--yellow:#f59e0b;--orange:#f97316;--red:#ef4444;
+  --purple:#8b5cf6;--cyan:#00b4d8;
+  --font-mono:'JetBrains Mono',monospace;
+  --font-sans:'Inter',system-ui,sans-serif;
+  --radius:8px;--radius-lg:12px;
+  --sidebar:260px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.6}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-rows:52px 1fr;grid-template-columns:var(--sidebar) 1fr;height:100vh}
+header{grid-column:1/-1;background:rgba(8,12,20,.95);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 16px;position:sticky;top:0;z-index:100}
+.sidebar{grid-row:2;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:12px 0}
+.main-content{grid-row:2;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── HEADER ── */
+.logo{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.logo-text span{color:var(--accent)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.progress-badge{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text-muted)}
+.progress-badge strong{color:var(--green)}
+.burger-btn{display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:4px 8px}
+
+/* ── SIDEBAR ── */
+.module-group{margin-bottom:4px}
+.module-header{padding:8px 16px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim)}
+.lesson-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;border-radius:0;transition:background .15s;user-select:none;border-left:3px solid transparent}
+.lesson-item:hover{background:var(--card)}
+.lesson-item.active{background:var(--accent-lo);border-left-color:var(--accent);color:var(--accent)}
+.lesson-item.completed .lesson-check{color:var(--green)}
+.lesson-check{width:16px;height:16px;border:1.5px solid var(--border-hi);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:.2s}
+.lesson-item.completed .lesson-check{background:var(--green);border-color:var(--green);color:#fff}
+.lesson-step{font-size:11px;color:var(--text-dim);flex-shrink:0}
+.lesson-name{font-size:13px;line-height:1.3;flex:1}
+.sidebar-divider{height:1px;background:var(--border);margin:8px 0}
+
+/* ── MAIN CONTENT ── */
+.content-pane{flex:1;overflow-y:auto;padding:24px 28px}
+.lesson-header{margin-bottom:20px}
+.module-badge{display:inline-flex;align-items:center;gap:6px;background:var(--accent-lo);border:1px solid var(--accent);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--accent);font-weight:500;margin-bottom:10px}
+.lesson-title{font-size:22px;font-weight:600;line-height:1.3;margin-bottom:8px}
+.lesson-desc{color:var(--text-muted);font-size:14px;line-height:1.5}
+
+/* ── CONCEPT BOX ── */
+.concept-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:20px}
+.concept-box h3{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim);margin-bottom:10px}
+.concept-box p{color:var(--text-muted);line-height:1.65;margin-bottom:8px}
+.concept-box p:last-child{margin-bottom:0}
+.concept-box ul,.concept-box ol{color:var(--text-muted);padding-left:20px;margin-bottom:8px}
+.concept-box li{margin-bottom:4px;line-height:1.5}
+.concept-box strong{color:var(--text)}
+.concept-box code{background:rgba(66,133,244,.15);color:var(--accent);padding:1px 5px;border-radius:4px;font-family:var(--font-mono);font-size:12px}
+
+/* ── DIAGRAMS ── */
+.diagram-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:20px;overflow-x:auto}
+.diagram-box svg{display:block;margin:0 auto;max-width:100%}
+
+/* ── EDITOR SECTION ── */
+.editor-section{margin-bottom:16px}
+.editor-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.editor-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font-sans);transition:.15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#3574e2}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-muted)}
+.btn-ghost:hover{background:var(--card);color:var(--text)}
+.btn-hint{background:transparent;border:1px solid var(--yellow);color:var(--yellow)}
+.btn-hint:hover{background:rgba(245,158,11,.1)}
+.editor-container{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;min-height:200px}
+
+/* ── TERMINAL ── */
+.terminal-section{margin-bottom:16px}
+.terminal-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px}
+.terminal{
+  background:#020408;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:12px 14px;
+  font-family:var(--font-mono);
+  font-size:12.5px;
+  min-height:120px;
+  max-height:260px;
+  overflow-y:auto;
+  white-space:pre-wrap;
+  word-break:break-all;
+}
+.terminal-placeholder{color:var(--text-dim)}
+.out-stdout{color:#c9d9f5}
+.out-stderr{color:var(--red)}
+.out-info{color:var(--text-muted)}
+.out-success{color:var(--green)}
+.out-error{color:var(--orange)}
+.out-exit-ok{color:var(--green);font-style:italic}
+.out-exit-err{color:var(--red);font-style:italic}
+
+/* ── ACTION BAR ── */
+.action-bar{display:flex;align-items:center;gap:10px;padding:16px 28px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.btn-complete{background:var(--green);color:#fff}
+.btn-complete:hover{background:#0ea673}
+.btn-complete.done{background:var(--card);color:var(--green);border:1px solid var(--green)}
+.btn-next{background:var(--card);border:1px solid var(--border);color:var(--text)}
+.btn-next:hover{background:var(--card-hover);border-color:var(--border-hi)}
+.action-spacer{flex:1}
+
+/* ── LOADING / EMPTY STATE ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-dim);text-align:center;gap:12px}
+.empty-icon{font-size:48px}
+.empty-title{font-size:18px;font-weight:600;color:var(--text-muted)}
+.empty-sub{font-size:14px}
+
+/* ── RUNNING INDICATOR ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  .app{grid-template-columns:1fr;grid-template-rows:52px 1fr}
+  .sidebar{grid-row:auto;display:none;position:fixed;left:0;top:52px;bottom:0;width:260px;z-index:200;border-right:1px solid var(--border)}
+  .sidebar.open{display:block}
+  .main-content{grid-column:1}
+  .burger-btn{display:block}
+  .content-pane{padding:16px}
+  .action-bar{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- HEADER -->
+  <header>
+    <button class="burger-btn" onclick="toggleSidebar()" title="Menú">☰</button>
+    <div class="logo">
+      <div class="logo-icon">🤖</div>
+      <div class="logo-text">Aprende <span>Multi-Agentes</span></div>
+    </div>
+    <div class="header-right">
+      <div class="progress-badge" id="progress-badge">Progreso: <strong id="progress-count">0</strong>/15</div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div id="sidebar-content"><!-- generado por JS --></div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main-content" id="main-content">
+    <div class="content-pane" id="content-pane">
+      <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <div class="empty-title">Bienvenido al Curso</div>
+        <div class="empty-sub">Selecciona una lección en el panel izquierdo para comenzar</div>
+      </div>
+    </div>
+    <div class="action-bar" id="action-bar" style="display:none">
+      <button class="btn btn-complete" id="btn-complete" onclick="markComplete()">&#10003; Completar Lección</button>
+      <div class="action-spacer"></div>
+      <button class="btn btn-next" id="btn-next" onclick="nextLesson()">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Diagrams SVG Templates (hidden, cloned by JS) -->
+<div id="svg-templates" style="display:none">
+  <!-- react -->
+  <svg id="svg-react" viewBox="0 0 520 140" width="520" height="140" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="518" height="138" rx="8" fill="#0f1520" stroke="#1e2d45"/>
+    <rect x="20" y="55" width="80" height="36" rx="6" fill="#1a2e5e" stroke="#4285f4"/>
+    <text x="60" y="78" text-anchor="middle" fill="#4285f4" font-size="12" font-family="Inter,sans-serif">Usuario</text>
+    <rect x="160" y="30" width="80" height="30" rx="5" fill="#1e2540" stroke="#8b5cf6"/>
+    <text x="200" y="50" text-anchor="middle" fill="#c4b5fd" font-size="11" font-family="Inter,sans-serif">💡 Pensar</text>
+    <rect x="160" y="70" width="80" height="30" rx="5" fill="#1e2540" stroke="#f77f00"/>
+    <text x="200" y="90" text-anchor="middle" fill="#fb923c" font-size="11" font-family="Inter,sans-serif">⚡ Actuar</text>
+    <rect x="160" y="110" width="80" height="22" rx="5" fill="#1e2540" stroke="#00b4d8"/>
+    <text x="200" y="126" text-anchor="middle" fill="#67e8f9" font-size="11" font-family="Inter,sans-serif">👁 Observar</text>
+    <rect x="390" y="55" width="100" height="36" rx="6" fill="#0e2218" stroke="#10b981"/>
+    <text x="440" y="78" text-anchor="middle" fill="#10b981" font-size="12" font-family="Inter,sans-serif">Respuesta</text>
+    <path d="M100 73 L155 45" stroke="#4285f4" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+    <path d="M100 73 L155 85" stroke="#4285f4" stroke-width="1.5" fill="none"/>
+    <path d="M240 45 Q290 10 240 85" stroke="#6b82a8" stroke-width="1" fill="none" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+    <path d="M240 85 L280 85 L280 121 L240 121" stroke="#6b82a8" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+    <path d="M240 121 L280 121 L280 45 L240 45" stroke="#6b82a8" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+    <path d="M240 85 L385 73" stroke="#10b981" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+    <defs>
+      <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#6b82a8"/>
+      </marker>
+      <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
+      </marker>
+    </defs>
+    <text x="260" y="22" text-anchor="middle" fill="#3d5278" font-size="10" font-family="Inter,sans-serif">ciclo ReAct × N</text>
+  </svg>
+
+  <!-- orchestrator -->
+  <svg id="svg-orchestrator" viewBox="0 0 520 160" width="520" height="160" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="518" height="158" rx="8" fill="#0f1520" stroke="#1e2d45"/>
+    <rect x="185" y="14" width="150" height="40" rx="7" fill="#1a2e5e" stroke="#4285f4" stroke-width="1.5"/>
+    <text x="260" y="39" text-anchor="middle" fill="#4285f4" font-size="13" font-family="Inter,sans-serif" font-weight="600">🧠 Orquestador</text>
+    <rect x="30" y="100" width="110" height="38" rx="6" fill="#0b1e30" stroke="#00b4d8"/>
+    <text x="85" y="124" text-anchor="middle" fill="#00b4d8" font-size="11" font-family="Inter,sans-serif">🔍 Buscador</text>
+    <rect x="200" y="100" width="120" height="38" rx="6" fill="#1d1030" stroke="#8b5cf6"/>
+    <text x="260" y="124" text-anchor="middle" fill="#8b5cf6" font-size="11" font-family="Inter,sans-serif">🔬 Analizador</text>
+    <rect x="380" y="100" width="110" height="38" rx="6" fill="#1e1800" stroke="#f77f00"/>
+    <text x="435" y="124" text-anchor="middle" fill="#f77f00" font-size="11" font-family="Inter,sans-serif">📊 Meta-Analista</text>
+    <line x1="260" y1="54" x2="85" y2="100" stroke="#2a3f5f" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <line x1="260" y1="54" x2="260" y2="100" stroke="#2a3f5f" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <line x1="260" y1="54" x2="435" y2="100" stroke="#2a3f5f" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="260" y="155" text-anchor="middle" fill="#3d5278" font-size="10" font-family="Inter,sans-serif">delegación de tareas</text>
+  </svg>
+
+  <!-- parallel -->
+  <svg id="svg-parallel" viewBox="0 0 520 150" width="520" height="150" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="518" height="148" rx="8" fill="#0f1520" stroke="#1e2d45"/>
+    <rect x="20" y="55" width="80" height="36" rx="6" fill="#1a2e5e" stroke="#4285f4"/>
+    <text x="60" y="78" text-anchor="middle" fill="#4285f4" font-size="11" font-family="Inter,sans-serif">Orquestador</text>
+    <rect x="170" y="20" width="110" height="30" rx="5" fill="#0b1e30" stroke="#00b4d8"/>
+    <text x="225" y="40" text-anchor="middle" fill="#00b4d8" font-size="11" font-family="Inter,sans-serif">PubMed</text>
+    <rect x="170" y="60" width="110" height="30" rx="5" fill="#1d1030" stroke="#8b5cf6"/>
+    <text x="225" y="80" text-anchor="middle" fill="#8b5cf6" font-size="11" font-family="Inter,sans-serif">Semantic Scholar</text>
+    <rect x="170" y="100" width="110" height="30" rx="5" fill="#1e1800" stroke="#f77f00"/>
+    <text x="225" y="120" text-anchor="middle" fill="#f77f00" font-size="11" font-family="Inter,sans-serif">CrossRef</text>
+    <rect x="370" y="55" width="120" height="36" rx="6" fill="#0e2218" stroke="#10b981"/>
+    <text x="430" y="78" text-anchor="middle" fill="#10b981" font-size="11" font-family="Inter,sans-serif">⚙ Deduplicar</text>
+    <line x1="100" y1="73" x2="170" y2="35" stroke="#2a3f5f" stroke-width="1.5"/>
+    <line x1="100" y1="73" x2="170" y2="75" stroke="#2a3f5f" stroke-width="1.5"/>
+    <line x1="100" y1="73" x2="170" y2="115" stroke="#2a3f5f" stroke-width="1.5"/>
+    <line x1="280" y1="35" x2="370" y2="65" stroke="#10b981" stroke-width="1.5"/>
+    <line x1="280" y1="75" x2="370" y2="73" stroke="#10b981" stroke-width="1.5"/>
+    <line x1="280" y1="115" x2="370" y2="80" stroke="#10b981" stroke-width="1.5"/>
+    <text x="225" y="145" text-anchor="middle" fill="#3d5278" font-size="10" font-family="Inter,sans-serif">⚡ ejecución en paralelo</text>
+  </svg>
+
+  <!-- pipeline -->
+  <svg id="svg-pipeline" viewBox="0 0 560 90" width="560" height="90" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="558" height="88" rx="8" fill="#0f1520" stroke="#1e2d45"/>
+    <rect x="10" y="25" width="85" height="40" rx="6" fill="#0b1e30" stroke="#00b4d8"/>
+    <text x="52" y="48" text-anchor="middle" fill="#00b4d8" font-size="11" font-family="Inter,sans-serif">🔍 Buscar</text>
+    <line x1="95" y1="45" x2="115" y2="45" stroke="#2a3f5f" stroke-width="2" marker-end="url(#ap)"/>
+    <rect x="115" y="25" width="90" height="40" rx="6" fill="#1d1030" stroke="#8b5cf6"/>
+    <text x="160" y="48" text-anchor="middle" fill="#8b5cf6" font-size="11" font-family="Inter,sans-serif">🔬 Analizar</text>
+    <line x1="205" y1="45" x2="225" y2="45" stroke="#2a3f5f" stroke-width="2" marker-end="url(#ap)"/>
+    <rect x="225" y="25" width="95" height="40" rx="6" fill="#1e1800" stroke="#f77f00"/>
+    <text x="272" y="48" text-anchor="middle" fill="#f77f00" font-size="10" font-family="Inter,sans-serif">📊 Sintetizar</text>
+    <line x1="320" y1="45" x2="340" y2="45" stroke="#2a3f5f" stroke-width="2" marker-end="url(#ap)"/>
+    <rect x="340" y="25" width="90" height="40" rx="6" fill="#0e2218" stroke="#10b981"/>
+    <text x="385" y="48" text-anchor="middle" fill="#10b981" font-size="11" font-family="Inter,sans-serif">📝 Redactar</text>
+    <line x1="430" y1="45" x2="450" y2="45" stroke="#2a3f5f" stroke-width="2" marker-end="url(#ap)"/>
+    <rect x="450" y="25" width="95" height="40" rx="6" fill="#1e0a14" stroke="#ff4d6d"/>
+    <text x="497" y="48" text-anchor="middle" fill="#ff4d6d" font-size="11" font-family="Inter,sans-serif">🎨 Presentar</text>
+    <defs>
+      <marker id="ap" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#2a3f5f"/>
+      </marker>
+    </defs>
+    <text x="280" y="82" text-anchor="middle" fill="#3d5278" font-size="10" font-family="Inter,sans-serif">cada etapa enriquece el contexto</text>
+  </svg>
+
+  <!-- full_system -->
+  <svg id="svg-full_system" viewBox="0 0 560 200" width="560" height="200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="558" height="198" rx="8" fill="#0f1520" stroke="#1e2d45"/>
+    <rect x="210" y="10" width="140" height="38" rx="7" fill="#1a2e5e" stroke="#4285f4" stroke-width="1.5"/>
+    <text x="280" y="34" text-anchor="middle" fill="#4285f4" font-size="13" font-family="Inter,sans-serif" font-weight="600">🧠 Orquestador</text>
+    <rect x="10" y="80" width="100" height="38" rx="6" fill="#0b1e30" stroke="#00b4d8"/>
+    <text x="60" y="104" text-anchor="middle" fill="#00b4d8" font-size="11" font-family="Inter,sans-serif">🔍 Buscador</text>
+    <rect x="125" y="80" width="105" height="38" rx="6" fill="#1d1030" stroke="#8b5cf6"/>
+    <text x="177" y="104" text-anchor="middle" fill="#8b5cf6" font-size="11" font-family="Inter,sans-serif">🔬 Analizador</text>
+    <rect x="245" y="80" width="115" height="38" rx="6" fill="#1e1800" stroke="#f77f00"/>
+    <text x="302" y="104" text-anchor="middle" fill="#f77f00" font-size="10" font-family="Inter,sans-serif">📊 Meta-Analista</text>
+    <rect x="375" y="80" width="95" height="38" rx="6" fill="#0e2218" stroke="#10b981"/>
+    <text x="422" y="104" text-anchor="middle" fill="#10b981" font-size="11" font-family="Inter,sans-serif">📝 Redactor</text>
+    <rect x="445" y="80" width="100" height="38" rx="6" fill="#1e0a14" stroke="#ff4d6d"/>
+    <text x="495" y="104" text-anchor="middle" fill="#ff4d6d" font-size="11" font-family="Inter,sans-serif">🎨 Presentador</text>
+    <line x1="280" y1="48" x2="60" y2="80" stroke="#2a3f5f" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <line x1="280" y1="48" x2="177" y2="80" stroke="#2a3f5f" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <line x1="280" y1="48" x2="302" y2="80" stroke="#2a3f5f" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <line x1="280" y1="48" x2="422" y2="80" stroke="#2a3f5f" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <line x1="280" y1="48" x2="495" y2="80" stroke="#2a3f5f" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <line x1="110" y1="118" x2="125" y2="118" stroke="#4285f4" stroke-width="1.5" marker-end="url(#af)"/>
+    <line x1="230" y1="118" x2="245" y2="118" stroke="#4285f4" stroke-width="1.5" marker-end="url(#af)"/>
+    <line x1="360" y1="118" x2="375" y2="118" stroke="#4285f4" stroke-width="1.5" marker-end="url(#af)"/>
+    <rect x="140" y="160" width="280" height="28" rx="5" fill="#0f1520" stroke="#2a3f5f"/>
+    <text x="280" y="179" text-anchor="middle" fill="#6b82a8" font-size="11" font-family="Inter,sans-serif">📤 JSON → DOCX → PPTX</text>
+    <line x1="422" y1="118" x2="280" y2="160" stroke="#2a3f5f" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="495" y1="118" x2="350" y2="160" stroke="#2a3f5f" stroke-width="1" stroke-dasharray="3,2"/>
+    <defs>
+      <marker id="af" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#4285f4"/>
+      </marker>
+    </defs>
+  </svg>
+</div>
+
+<script type="module">
+import { EditorView, basicSetup } from "codemirror";
+import { python } from "@codemirror/lang-python";
+import { oneDark } from "@codemirror/theme-one-dark";
+
+// ── Estado global ──
+let lessons = [];
+let currentLesson = null;
+let editor = null;
+let running = false;
+let eventSource = null;
+const PROGRESS_KEY = 'maicurso_progress_v1';
+
+// ── Progreso (localStorage) ──
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveProgress(lessonId, completed) {
+  const p = loadProgress();
+  p[lessonId] = completed;
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+  updateProgressUI();
+  // Sync al servidor (fire-and-forget)
+  fetch('/api/progress', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({lesson_id: lessonId, completed})
+  }).catch(() => {});
+}
+function isCompleted(lessonId) {
+  return !!loadProgress()[lessonId];
+}
+function updateProgressUI() {
+  const p = loadProgress();
+  const count = Object.values(p).filter(Boolean).length;
+  document.getElementById('progress-count').textContent = count;
+  // Actualiza checkmarks en sidebar
+  lessons.forEach(l => {
+    const el = document.getElementById(`lesson-item-${l.id}`);
+    if (!el) return;
+    const check = el.querySelector('.lesson-check');
+    if (isCompleted(l.id)) {
+      el.classList.add('completed');
+      if (check) check.textContent = '✓';
+    } else {
+      el.classList.remove('completed');
+      if (check) check.textContent = '';
+    }
+  });
+  // Actualiza botón completar
+  if (currentLesson) {
+    const btn = document.getElementById('btn-complete');
+    if (isCompleted(currentLesson.id)) {
+      btn.textContent = '✓ Completada';
+      btn.classList.add('done');
+    } else {
+      btn.textContent = '✓ Completar Lección';
+      btn.classList.remove('done');
+    }
+  }
+}
+
+// ── Sidebar ──
+function buildSidebar() {
+  const container = document.getElementById('sidebar-content');
+  // Agrupa por módulo
+  const modules = {};
+  lessons.forEach(l => {
+    if (!modules[l.module]) modules[l.module] = { title: l.module_title, lessons: [] };
+    modules[l.module].lessons.push(l);
+  });
+  let html = '';
+  Object.keys(modules).sort().forEach(mod => {
+    const m = modules[mod];
+    html += `<div class="module-group">`;
+    html += `<div class="module-header">Módulo ${mod}: ${m.title}</div>`;
+    m.lessons.forEach(l => {
+      const done = isCompleted(l.id);
+      html += `<div class="lesson-item${done?' completed':''}" id="lesson-item-${l.id}" onclick="loadLesson('${l.id}')" title="${l.title}">`;
+      html += `<div class="lesson-check">${done?'✓':''}</div>`;
+      html += `<span class="lesson-step">${mod}.${l.step}</span>`;
+      html += `<span class="lesson-name">${l.title}</span>`;
+      html += `</div>`;
+    });
+    html += `<div class="sidebar-divider"></div></div>`;
+  });
+  container.innerHTML = html;
+}
+
+// ── Cargar lección ──
+window.loadLesson = async function(lessonId) {
+  // Cierra stream anterior si existe
+  if (eventSource) { eventSource.close(); eventSource = null; }
+
+  // Marca activa en sidebar
+  document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+  const sideItem = document.getElementById(`lesson-item-${lessonId}`);
+  if (sideItem) sideItem.classList.add('active');
+
+  // Cierra sidebar en mobile
+  document.getElementById('sidebar').classList.remove('open');
+
+  const pane = document.getElementById('content-pane');
+  pane.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Cargando lección...</div></div>';
+
+  try {
+    const resp = await fetch(`/api/lessons/${lessonId}`);
+    if (!resp.ok) throw new Error('No se pudo cargar la lección');
+    currentLesson = await resp.json();
+    renderLesson(currentLesson);
+  } catch (err) {
+    pane.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Error: ${err.message}</div></div>`;
+  }
+};
+
+// ── Renderizar lección ──
+function renderLesson(lesson) {
+  const pane = document.getElementById('content-pane');
+
+  // Diagrama
+  let diagramHtml = '';
+  if (lesson.diagram_type && lesson.diagram_type !== 'none') {
+    const svgTpl = document.getElementById(`svg-${lesson.diagram_type}`);
+    if (svgTpl) {
+      diagramHtml = `<div class="diagram-box">${svgTpl.outerHTML.replace('id="svg-'+lesson.diagram_type+'"','')}</div>`;
+    }
+  }
+
+  pane.innerHTML = `
+    <div class="lesson-header">
+      <div class="module-badge">📚 Módulo ${lesson.module} &bull; Paso ${lesson.step}</div>
+      <div class="lesson-title">${lesson.title}</div>
+      <div class="lesson-desc">${lesson.description}</div>
+    </div>
+    <div class="concept-box">
+      <h3>Concepto</h3>
+      ${lesson.concept_html}
+    </div>
+    ${diagramHtml}
+    <div class="editor-section">
+      <div class="editor-toolbar">
+        <span class="editor-label">💻 Código Python</span>
+        <button class="btn btn-primary" id="btn-run" onclick="runCode()">▶ Ejecutar</button>
+        <button class="btn btn-ghost" onclick="resetCode()">↺ Reset</button>
+        <button class="btn btn-hint" onclick="showHint()">💡 Ver Solución</button>
+      </div>
+      <div class="editor-container" id="editor-container"></div>
+    </div>
+    <div class="terminal-section">
+      <div class="terminal-label">🖥 Salida</div>
+      <div class="terminal" id="terminal"><span class="terminal-placeholder">La salida aparecerá aquí al ejecutar el código...</span></div>
+    </div>
+  `;
+
+  // Inicializa editor
+  const savedCode = localStorage.getItem(`code_${lesson.id}`);
+  initEditor(savedCode || lesson.starter_code);
+
+  // Barra de acciones
+  document.getElementById('action-bar').style.display = '';
+  updateProgressUI();
+
+  // Siguiente lección
+  const allIds = lessons.map(l => l.id);
+  const currIdx = allIds.indexOf(lesson.id);
+  const nextBtn = document.getElementById('btn-next');
+  if (currIdx < allIds.length - 1) {
+    nextBtn.style.display = '';
+    nextBtn.textContent = `Siguiente: ${lessons[currIdx+1].title.substring(0,30)}... →`;
+  } else {
+    nextBtn.style.display = 'none';
+  }
+}
+
+// ── Editor CodeMirror ──
+function initEditor(code) {
+  const container = document.getElementById('editor-container');
+  if (!container) return;
+  if (editor) { editor.destroy(); editor = null; }
+  editor = new EditorView({
+    doc: code || '',
+    extensions: [
+      basicSetup,
+      python(),
+      oneDark,
+      EditorView.theme({
+        '&': { backgroundColor: '#080c14', minHeight: '200px' },
+        '.cm-content': { fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', padding: '8px 0' },
+        '.cm-gutters': { backgroundColor: '#0a0e18', borderRight: '1px solid #1e2d45' },
+        '.cm-scroller': { fontFamily: "'JetBrains Mono', monospace" },
+      }),
+      EditorView.updateListener.of(v => {
+        if (v.docChanged && currentLesson) {
+          localStorage.setItem(`code_${currentLesson.id}`, editor.state.doc.toString());
+        }
+      }),
+    ],
+    parent: container,
+  });
+}
+
+function getCode() {
+  return editor ? editor.state.doc.toString() : '';
+}
+
+window.resetCode = function() {
+  if (!currentLesson || !editor) return;
+  localStorage.removeItem(`code_${currentLesson.id}`);
+  editor.dispatch({changes: {from: 0, to: editor.state.doc.length, insert: currentLesson.starter_code}});
+  clearTerminal();
+};
+
+window.showHint = function() {
+  if (!currentLesson || !editor) return;
+  if (!confirm('¿Ver la solución? Intenta resolverlo tú mismo primero.')) return;
+  editor.dispatch({changes: {from: 0, to: editor.state.doc.length, insert: currentLesson.solution_code}});
+};
+
+// ── Ejecución de código ──
+window.runCode = async function() {
+  if (running) return;
+  const code = getCode();
+  if (!code.trim()) return;
+
+  running = true;
+  const btn = document.getElementById('btn-run');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Ejecutando...';
+  }
+
+  clearTerminal();
+  termPrint('Ejecutando...\n', 'out-info');
+
+  try {
+    const resp = await fetch('/api/run-code', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lesson_id: currentLesson?.id || 'demo', code}),
+    });
+    if (!resp.ok) throw new Error(`Error ${resp.status}`);
+    const {exec_id} = await resp.json();
+
+    // Limpia la línea "Ejecutando..."
+    clearTerminal();
+
+    // Abre SSE stream
+    if (eventSource) eventSource.close();
+    eventSource = new EventSource(`/api/stream/${exec_id}`);
+
+    eventSource.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      handleStreamEvent(data);
+    };
+    eventSource.onerror = () => {
+      termPrint('\n[Conexión interrumpida]\n', 'out-error');
+      finishRun();
+    };
+  } catch (err) {
+    termPrint(`Error: ${err.message}\n`, 'out-error');
+    finishRun();
+  }
+};
+
+function handleStreamEvent(data) {
+  switch (data.type) {
+    case 'output':
+      termPrint(data.text, data.stream === 'stderr' ? 'out-stderr' : 'out-stdout');
+      break;
+    case 'exec_done':
+      if (data.exit_code === 0) {
+        termPrint(`\n✅ Proceso terminado (exit 0)\n`, 'out-exit-ok');
+      } else {
+        termPrint(`\n❌ Proceso terminó con código ${data.exit_code}\n`, 'out-exit-err');
+      }
+      finishRun();
+      break;
+    case 'exec_error':
+      termPrint(`\n⚠ ${data.message}\n`, 'out-error');
+      finishRun();
+      break;
+    case 'stream_end':
+      if (eventSource) { eventSource.close(); eventSource = null; }
+      finishRun();
+      break;
+    case 'ping':
+      break;
+  }
+}
+
+function finishRun() {
+  running = false;
+  const btn = document.getElementById('btn-run');
+  if (btn) { btn.disabled = false; btn.innerHTML = '▶ Ejecutar'; }
+}
+
+// ── Terminal helpers ──
+function termPrint(text, cls = 'out-stdout') {
+  const t = document.getElementById('terminal');
+  if (!t) return;
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = text;
+  // Elimina placeholder si existe
+  const ph = t.querySelector('.terminal-placeholder');
+  if (ph) ph.remove();
+  t.appendChild(span);
+  t.scrollTop = t.scrollHeight;
+}
+function clearTerminal() {
+  const t = document.getElementById('terminal');
+  if (t) t.innerHTML = '';
+}
+
+// ── Acciones de navegación ──
+window.markComplete = function() {
+  if (!currentLesson) return;
+  saveProgress(currentLesson.id, true);
+};
+
+window.nextLesson = function() {
+  if (!currentLesson) return;
+  const allIds = lessons.map(l => l.id);
+  const idx = allIds.indexOf(currentLesson.id);
+  if (idx < allIds.length - 1) loadLesson(allIds[idx + 1]);
+};
+
+window.toggleSidebar = function() {
+  document.getElementById('sidebar').classList.toggle('open');
+};
+
+// ── Inicialización ──
+async function init() {
+  try {
+    const resp = await fetch('/api/lessons');
+    lessons = await resp.json();
+    buildSidebar();
+    updateProgressUI();
+  } catch (err) {
+    document.getElementById('sidebar-content').innerHTML =
+      `<div style="padding:16px;color:var(--red)">Error al cargar lecciones: ${err.message}</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
